@@ -5,6 +5,7 @@ const path = require('path');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
+const feedbackRoutes = require('./routes/feedback');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +29,7 @@ app.use('/', require('./routes/auth'));
 app.use('/dashboard', require('./routes/dashboard'));
 app.use('/products', require('./routes/products'));
 app.use('/member', require('./routes/productsPage'));
+app.use('/feedback', require('./routes/feedback'));
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
