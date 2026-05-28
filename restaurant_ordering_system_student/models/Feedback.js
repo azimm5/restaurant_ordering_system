@@ -3,26 +3,23 @@ const pool = require('../config/database');
 
 class Feedback {
     static async create(memberId, productId, orderId, rating, comment) {
-        const query = 'SELECT create_feedback($1, $2, $3, $4, $5)';
-        const result = await pool.query(query, [memberId, productId, orderId, rating, comment]);
-        return result.rows;
+        const query = 'CALL create_feedback($1, $2, $3, $4, $5)';
+        await pool.query(query, [memberId, productId, orderId, rating, comment]);
     }
 
     static async update(feedbackId, rating, comment) {
-        const query = 'SELECT update_feedback($1, $2, $3)';
-        const result = await pool.query(query, [feedbackId, rating, comment]);
-        return result.rows;
+        const query = 'CALL update_feedback($1, $2, $3)';
+        await pool.query(query, [feedbackId, rating, comment]);
     }
 
     static async delete(feedbackId) {
-        const query = 'SELECT delete_feedback($1)';
-        const result = await pool.query(query, [feedbackId]);
-        return result.rows;
+        const query = 'CALL delete_feedback($1)';
+        await pool.query(query, [feedbackId]);
     }
 
-    static async getByProduct(productId) {
+    static async getByMember(memberId) {
         const query = 'SELECT * FROM get_feedback($1)';
-        const result = await pool.query(query, [productId]);
+        const result = await pool.query(query, [memberId]);
         return result.rows;
     }
 }

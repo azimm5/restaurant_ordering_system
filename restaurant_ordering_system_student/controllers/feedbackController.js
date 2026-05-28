@@ -11,10 +11,31 @@ class FeedbackController {
         }
     }
 
-    static async listByProduct(req, res) {
+    static async update(req, res) {
         try {
-            const { productId } = req.params;
-            const feedback = await Feedback.getByProduct(productId);
+            const { feedbackId } = req.params;
+            const { rating, comment } = req.body;
+            await Feedback.update(feedbackId, rating, comment);
+            res.json({ message: 'Feedback updated successfully' });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    }
+
+    static async delete(req, res) {
+        try {
+            const { feedbackId } = req.params;
+            await Feedback.delete(feedbackId);
+            res.json({ message: 'Feedback deleted successfully' });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    }
+
+    static async listByMember(req, res) {
+        try {
+            const { memberId } = req.params;
+            const feedback = await Feedback.getByMember(memberId);
             res.json(feedback);
         } catch (err) {
             res.status(500).json({ error: err.message });
