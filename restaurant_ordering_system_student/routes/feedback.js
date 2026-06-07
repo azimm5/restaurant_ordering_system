@@ -11,6 +11,9 @@ router.put('/:feedbackId', FeedbackController.update);
 // DELETE /feedback/:feedbackId
 router.delete('/:feedbackId', FeedbackController.delete);
 
+// GET /feedback/product/:productId
+router.get('/product/:productId', FeedbackController.listByProduct);
+
 // GET /feedback/:memberId
 router.get('/:memberId', FeedbackController.listByMember);
 

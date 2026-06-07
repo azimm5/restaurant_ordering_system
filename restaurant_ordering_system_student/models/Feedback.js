@@ -22,6 +22,12 @@ class Feedback {
         const result = await pool.query(query, [memberId]);
         return result.rows;
     }
+
+    static async getByProduct(productId) {
+        const query = 'SELECT * FROM get_feedback_by_product($1)';
+        const result = await pool.query(query, [productId]);
+        return result.rows;
+    }
 }
 
 module.exports = Feedback;

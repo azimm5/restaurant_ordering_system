@@ -41,6 +41,17 @@ class FeedbackController {
             res.status(500).json({ error: err.message });
         }
     }
+
+    // list feedback by product
+    static async listByProduct(req, res) {
+        try {
+            const { productId } = req.params;
+            const feedback = await Feedback.getByProduct(productId);
+            res.json(feedback);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    }
 }
 
 module.exports = FeedbackController;
