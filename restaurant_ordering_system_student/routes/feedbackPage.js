@@ -10,4 +10,9 @@ router.get('/feedback', ensureAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, '../views/feedback/index.html'));
 });
 
+// GET /member/feedback/create - serve feedback create page
+router.get('/feedback/create', ensureAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, '../views/feedback/create.html'));
+});
+
 module.exports = router;
