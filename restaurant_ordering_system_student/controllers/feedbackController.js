@@ -16,14 +16,6 @@ class FeedbackController {
 
             const latestOrder = await Feedback.getLatestOrder(memberId, productId);
 
-            // no order made
-            if (!latestOrder) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'No order found for this product'
-                });
-            }
-
             // order not completed
             if (latestOrder.status !== 'COMPLETED') {
                 return res.status(400).json({
@@ -134,6 +126,26 @@ class FeedbackController {
         } catch (err) {
             res.status(500).json({
                 success: false,
+                message: err.message
+            });
+        }
+    }
+
+    static async getById(req, res) {
+        try {
+            const memberId = req.session.userId;
+            const { feedbackId } = req.params;
+
+            const feedback = await Feedback.findById(feedbackId, memberId);
+
+            res.json({
+                success: true, 
+                feedback
+            });
+
+        } catch (err) {
+            res.status(500).json({
+                success: false, 
                 message: err.message
             });
         }

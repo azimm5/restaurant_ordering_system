@@ -15,4 +15,9 @@ router.get('/feedback/create', ensureAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, '../views/feedback/create.html'));
 });
 
+// GET /member/feedback/edit - serve feedback edit page
+router.get('/feedback/edit', ensureAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, '../views/feedback/edit.html'));
+});
+
 module.exports = router;

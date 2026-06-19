@@ -7,6 +7,7 @@ const router = express.Router();
 // Use stored procedures and functions from controller instead of raw SQL
 router.get('/', ensureAuthenticated,FeedbackController.listByMember); // index.html
 router.get('/product/:productId', FeedbackController.listByProduct); // product-detail.html
+router.get('/:feedbackId', ensureAuthenticated, FeedbackController.getById);
 router.post('/product/:productId', ensureAuthenticated,FeedbackController.create); // create.html
 router.put('/:feedbackId', ensureAuthenticated,FeedbackController.update); // edit.html
 router.delete('/:feedbackId', ensureAuthenticated,FeedbackController.delete); // index.html

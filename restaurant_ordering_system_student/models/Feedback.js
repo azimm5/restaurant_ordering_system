@@ -18,9 +18,15 @@ class Feedback {
     }
 
     static async getByMember(memberId) {
-        const query = 'SELECT * FROM get_feedback($1)';
+        const query = 'SELECT * FROM get_feedback_by_member($1)';
         const result = await pool.query(query, [memberId]);
         return result.rows;
+    }
+
+    static async findById(feedbackId, memberId) {
+        const query = 'SELECT * FROM get_feedback_by_id($1, $2)';
+        const result = await pool.query(query, [feedbackId, memberId]);
+        return result.rows[0];
     }
 
     static async getByProduct(productId) {
@@ -29,7 +35,7 @@ class Feedback {
         return result.rows;
     }
 
-        static async getLatestOrder(memberId, productId) {
+    static async getLatestOrder(memberId, productId) {
         const query = 'SELECT * FROM get_latest_order($1, $2)';
         const result = await pool.query(query, [memberId, productId]);
         return result.rows[0] || null; // returns { order_id, status } or null
