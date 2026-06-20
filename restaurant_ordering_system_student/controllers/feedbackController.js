@@ -16,14 +16,6 @@ class FeedbackController {
 
             const latestOrder = await Feedback.getLatestOrder(memberId, productId);
 
-            // order not completed
-            if (latestOrder.status !== 'COMPLETED') {
-                return res.status(400).json({
-                    success: false,
-                    message: `Order is ${latestOrder.status}. Only completed orders can create feedback.`
-                });
-            }
-
             // order is completed → create feedback
             await Feedback.create(memberId, productId, latestOrder.order_id, rating, comment);
 
