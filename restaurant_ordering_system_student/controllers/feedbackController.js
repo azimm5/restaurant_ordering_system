@@ -18,10 +18,23 @@ class FeedbackController {
                 message: 'Feedback created successfully'
             });
         } catch (err) {
-            return res.status(500).json({
-                success: false,
-                message: err.message
-            });
+            if (err.code === 'P4000') {
+                return res.status(400).json({ success: false, message: err.message });
+            } else if (err.code === 'P4040') {
+                return res.status(404).json({ success: false, message: err.message });
+            } else if (err.code === 'P4041') {
+                return res.status(404).json({ success: false, message: err.message });
+            } else if (err.code === 'P4042') {
+                return res.status(404).json({ success: false, message: err.message });
+            } else if (err.code === 'P4030') {
+                return res.status(403).json({ success: false, message: err.message });
+            } else if (err.code === 'P4031') {
+                return res.status(403).json({ success: false, message: err.message });
+            } else if (err.code === 'P4032') {
+                return res.status(403).json({ success: false, message: err.message });
+            } else {
+                return res.status(500).json({ success: false, message: 'Internal server error' });
+            }
         }
     }
 
@@ -38,10 +51,17 @@ class FeedbackController {
                 message: 'Feedback updated successfully'
             });
         } catch (err) {
-            res.status(500).json({
-                success: false,
-                message: err.message
-            });
+            if (err.code === 'P4041') {
+                return res.status(404).json({ success: false, message: err.message });
+            } else if (err.code === 'P4030') {
+                return res.status(403).json({ success: false, message: err.message });
+            } else if (err.code === 'P4000') {
+                return res.status(400).json({ success: false, message: err.message });
+            } else if (err.code === 'P4001') {
+                return res.status(400).json({ success: false, message: err.message });
+            } else {
+                return res.status(500).json({ success: false, message: 'Internal server error' });
+            }
         }
     }
 
@@ -57,10 +77,22 @@ class FeedbackController {
                 message: 'Feedback deleted successfully'
             });
         } catch (err) {
-            res.status(500).json({
-                success: false,
-                message: err.message
-            });
+            if (err.code === 'P4041') {
+                return res.status(404).json({
+                    success: false,
+                    message: err.message
+                });
+            } else if (err.code === 'P4030') {
+                return res.status(403).json({
+                    success: false,
+                    message: err.message
+                });
+            } else {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Internal server error'
+                });
+            }
         }
     }
 
@@ -73,9 +105,24 @@ class FeedbackController {
                 feedback
             });
         } catch (err) {
-            res.status(500).json({
+            // Map structured error codes to correct HTTP responses
+            if (err.code === 'P4040') {
+                return res.status(404).json({
+                    success: false,
+                    message: err.message
+                });
+            }
+            if (err.code === 'P4041') {
+                return res.status(404).json({
+                    success: false,
+                    message: err.message
+                });
+            }
+
+            // Fallback for unexpected errors
+            return res.status(500).json({
                 success: false,
-                message: err.message
+                message: 'Internal server error'
             });
         }
     }
@@ -90,9 +137,24 @@ class FeedbackController {
                 feedback
             });
         } catch (err) {
-            res.status(500).json({
+            // Map structured error codes to correct HTTP responses
+            if (err.code === 'P4040') {
+                return res.status(404).json({
+                    success: false,
+                    message: err.message
+                });
+            }
+            if (err.code === 'P4041') {
+                return res.status(404).json({
+                    success: false,
+                    message: err.message
+                });
+            }
+
+            // Fallback for unexpected errors
+            return res.status(500).json({
                 success: false,
-                message: err.message
+                message: 'Internal server error'
             });
         }
     }
@@ -110,9 +172,30 @@ class FeedbackController {
             });
 
         } catch (err) {
-            res.status(500).json({
+            // Map structured error codes to correct HTTP responses
+            if (err.code === 'P4040') {
+                return res.status(404).json({
+                    success: false,
+                    message: err.message
+                });
+            }
+            if (err.code === 'P4041') {
+                return res.status(404).json({
+                    success: false,
+                    message: err.message
+                });
+            }
+            if (err.code === 'P4030') {
+                return res.status(403).json({
+                    success: false,
+                    message: err.message
+                });
+            }
+
+            // Fallback for unexpected errors
+            return res.status(500).json({
                 success: false,
-                message: err.message
+                message: 'Internal server error'
             });
         }
     }
