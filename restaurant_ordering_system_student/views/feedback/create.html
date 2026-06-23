@@ -47,8 +47,11 @@
       <h5>Feedback for this Product</h5>
       <div id="feedback-list" class="mb-3"></div>
 
+      <!-- Error Message -->
+      <div id="error-message" class="alert alert-danger" style="display:none;"></div>
+
       <!-- Feedback Form -->
-      <form id="feedback-form" class="card card-body">
+      <form id="feedback-form" class="card card-body" style="display:none;">
         <div class="mb-3">
           <label for="feedback-rating" class="form-label">Rating (1-5)</label>
           <input type="number" id="feedback-rating" class="form-control" min="1" max="5" required>
@@ -60,42 +63,92 @@
         <button type="submit" class="btn btn-primary">Submit Feedback</button>
       </form>
     </div>
+  </main>
 
-    <script>
-      const productId = new URLSearchParams(window.location.search).get('productId');
-        const backLink = document.getElementById('back-to-detail');
-        backLink.href = `/member/product-detail?id=${productId}`;
-        
-      document.getElementById('feedback-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
+  <!-- Toast Container -->
+  <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
+    <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert"
+      aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body" id="toastMessage">
+          <!-- Message will be injected here -->
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+          aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
 
-        const rating = document.getElementById('feedback-rating').value;
-        const comment = document.getElementById('feedback-comment').value;
-        const loading = document.getElementById('loading');
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
-        // Show spinner
-        loading.style.display = 'block';
+  <!-- Toast helper -->
+  <script src="/js/toastHelper.js"></script>
 
-        try {
-          const response = await fetch(`/feedback/product/${productId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rating, comment })
-          });
+  <script>
+    const productId = new URLSearchParams(window.location.search).get('productId');
+    const backLink = document.getElementById('back-to-detail');
+    backLink.href = `/member/product-detail?id=${productId}`;
 
-          const data = await response.json();
-          loading.style.display = 'none';
+    const feedbackForm = document.getElementById('feedback-form');
+    const errorMessage = document.getElementById('error-message');
+    const loading = document.getElementById('loading');
 
-          if (response.ok) {
-            alert('Feedback created successfully!');
-            window.location.href = `/member/product-detail?id=${productId}`;
-          } else {
-            alert(data.message || 'Failed to submit feedback.');
-          }
-        } catch (err) {
-          console.error('Error submitting feedback:', err);
-          loading.style.display = 'none';
-          alert('Unexpected error occured');
+    // Check eligibility on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const response = await fetch(`/feedback/eligibility/${productId}`);
+        const data = await response.json();
+
+        if (data.success) {
+          feedbackForm.style.display = 'block';
+          errorMessage.style.display = 'none';
+        } else {
+          feedbackForm.style.display = 'none';
+          errorMessage.style.display = 'block';
+          errorMessage.textContent = data.message || 'Only completed orders can create feedback.';
         }
-      });
-    </script>
+      } catch (err) {
+        feedbackForm.style.display = 'none';
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = 'Unexpected error occurred while checking eligibility.';
+      }
+    });
+
+    // Handle feedback submission
+    document.getElementById('feedback-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const rating = document.getElementById('feedback-rating').value;
+      const comment = document.getElementById('feedback-comment').value;
+
+      // Show spinner
+      loading.style.display = 'block';
+
+      try {
+        const response = await fetch(`/feedback/product/${productId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rating, comment })
+        });
+
+        const data = await response.json();
+        loading.style.display = 'none';
+
+        if (data.success) {
+          showToast(data.message, `/member/product-detail?id=${productId}`);
+        } else {
+          errorMessage.style.display = 'block';
+          errorMessage.textContent = data.message || 'Failed to submit feedback.';
+        }
+      } catch (err) {
+        console.error('Error submitting feedback:', err);
+        loading.style.display = 'none';
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = 'Unexpected error occurred.';
+      }
+    });
+  </script>
+</body>
+
+</html>

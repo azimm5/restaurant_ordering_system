@@ -4,27 +4,21 @@ class FeedbackController {
     static async create(req, res) {
         try {
             const memberId = req.session.userId;
-            if (!memberId) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Not authenticated'
-                });
-            }
-
             const { productId } = req.params;
             const { rating, comment } = req.body;
 
-            const latestOrder = await Feedback.getLatestOrder(memberId, productId);
+            // eligibility middleware attached latestOrder
+            const latestOrder = res.locals.latestOrder;
 
-            // order is completed → create feedback
+            // order is completed
             await Feedback.create(memberId, productId, latestOrder.order_id, rating, comment);
 
-            res.status(201).json({
+            return res.status(201).json({
                 success: true,
                 message: 'Feedback created successfully'
             });
         } catch (err) {
-            res.status(500).json({
+            return res.status(500).json({
                 success: false,
                 message: err.message
             });
@@ -34,13 +28,6 @@ class FeedbackController {
     static async update(req, res) {
         try {
             const memberId = req.session.userId;
-            if (!memberId) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Not authenticated'
-                });
-            }
-
             const { feedbackId } = req.params;
             const { rating, comment } = req.body;
 
@@ -61,13 +48,6 @@ class FeedbackController {
     static async delete(req, res) {
         try {
             const memberId = req.session.userId;
-            if (!memberId) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Not authenticated'
-                });
-            }
-
             const { feedbackId } = req.params;
 
             await Feedback.delete(feedbackId, memberId);
@@ -87,12 +67,6 @@ class FeedbackController {
     static async listByMember(req, res) {
         try {
             const memberId = req.session.userId;
-            if (!memberId) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Not authenticated'
-                });
-            }
             const feedback = await Feedback.getByMember(memberId);
             res.json({
                 success: true,
@@ -131,13 +105,13 @@ class FeedbackController {
             const feedback = await Feedback.findById(feedbackId, memberId);
 
             res.json({
-                success: true, 
+                success: true,
                 feedback
             });
 
         } catch (err) {
             res.status(500).json({
-                success: false, 
+                success: false,
                 message: err.message
             });
         }

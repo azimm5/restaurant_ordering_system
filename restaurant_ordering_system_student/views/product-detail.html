@@ -172,7 +172,7 @@
     }
 
     async function fetchFeedback(productId) {
-      
+
       const feedbackSection = document.getElementById('feedback-section');
       const feedbackLoading = document.getElementById('feedback-loading');
       const feedbackError = document.getElementById('feedback-error');
@@ -191,13 +191,13 @@
 
         if (!response.ok || !data.success) {
           feedbackError.style.display = 'block';
+          feedbackError.textContent = data.message || 'Failed to load feedback.';
           return;
         }
 
         if (data.feedback.length === 0) {
-          const feedbackError = document.getElementById('feedback-error');
           feedbackError.style.display = 'block';
-          feedbackError.textContent = 'No feedback yet.';
+          feedbackError.textContent = data.message || 'No feedback yet.';
           return;
         }
 
@@ -219,6 +219,7 @@
         console.error('Error fetching feedback:', error);
         feedbackLoading.style.display = 'none';
         feedbackError.style.display = 'block';
+        feedbackError.textContent = 'Unexpected error occurred while loading feedback.';
       }
     }
 
