@@ -1,6 +1,6 @@
 // routes/feedback.js
 const express = require('express');
-const FeedbackController = require('../controllers/FeedbackController');
+const FeedbackController = require('../controllers/feedbackController');
 const { ensureAuthenticated } = require('../middleware/auth');
 const feedbackEligibility = require('../middleware/feedbackEligibility');
 const router = express.Router();

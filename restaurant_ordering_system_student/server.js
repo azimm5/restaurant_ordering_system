@@ -25,7 +25,7 @@ app.use(session({
 app.use(express.static('public'));
 //Mount auth routes at the ROOT
 app.use('/', require('./routes/auth'));
-
+app.use('/api', require('./routes/api'));
 app.use('/dashboard', require('./routes/dashboard'));
 app.use('/products', require('./routes/products'));
 app.use('/member', require('./routes/productsPage'));

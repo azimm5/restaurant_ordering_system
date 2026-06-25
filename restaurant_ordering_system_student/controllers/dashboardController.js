@@ -1,30 +1,31 @@
 // controllers/dashboardController.js
-const SaleOrder = require('../models/SaleOrder');
-const Product = require('../models/Product');
+const Dashboard = require('../models/Dashboard');
 
 class DashboardController {
-    static async index(req, res) {
+    static async getSummary(req, res) {
         try {
-            const filters = {
-                startDate: req.query.start_date,
-                endDate: req.query.end_date,
-                productCategory: req.query.category,
-                sortBy: req.query.sort_by || 'order_date',
-                sortOrder: req.query.sort_order || 'DESC'
-            };
+            const { start_date, end_date, category, customer_name, sort_by, sort_order } = req.query;
+            const orders = await Dashboard.getSummary(start_date, end_date, category, customer_name, sort_by, sort_order);
+            const categories = await Dashboard.getCategories();
 
-            const orders = await SaleOrder.getSummary(filters);
-            const categories = await Product.getCategories();
-
-            res.render('dashboard', { 
-                orders, 
-                categories, 
-                filters, 
-                user: req.session.user 
+            res.json({
+                success: true,
+                orders,
+                categories,
+                filters: req.query,
+                user: req.user
             });
-        } catch (error) {
-            console.error('Error loading dashboard:', error);
-            res.status(500).send('Server error');
+        } catch (err) {
+            console.error('DashboardController error:', err);
+            if (err.code === 'P4000') {
+                return res.status(400).json({ success: false, message: err.message });
+            } else if (err.code === 'P4040') {
+                return res.status(404).json({ success: false, message: err.message });
+            } else if (err.code === 'P4041') {
+                return res.status(404).json({ success: false, message: err.message });
+            } else {
+                return res.status(500).json({ success: false, message: 'Internal server error' });
+            }
         }
     }
 }
