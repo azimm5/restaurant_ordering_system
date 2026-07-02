@@ -210,9 +210,14 @@
           <strong>Comment:</strong> ${fb.comment}<br>
           <small class="text-muted">Last Updated: ${new Date(fb.updated_at).toLocaleString()}</small><br>
           <small class="text-muted">By: ${fb.username}</small>
-        </div>
-      `;
+        <!-- add response containers -->
+      <div id="responses-${fb.feedback_id}" class="mt-2"></div>
+    </div>      
+    `;
           feedbackList.appendChild(fbCard);
+
+          // trigger responses fetch for this feedback
+          fetchResponses(fb.feedback_id);
         });
 
       } catch (error) {
@@ -223,8 +228,40 @@
       }
     }
 
-  </script>
+    async function fetchResponses(feedbackId) {
+      const container = document.getElementById(`responses-${feedbackId}`);
+      container.innerHTML = '<small class="text-muted">Loading responses...</small>';
 
+      try {
+        const response = await fetch(`/response/feedback/${feedbackId}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          container.innerHTML = `<div class="alert alert-warning p-1">${data.message || 'No responses found.'}</div>`;
+          return;
+        }
+
+        if (data.responses.length === 0) {
+          container.innerHTML = '<small class="text-muted">No responses yet.</small>';
+          return;
+        }
+
+        container.innerHTML = '';
+        data.responses.forEach(r => {
+          const rDiv = document.createElement('div');
+          rDiv.className = 'border-start ps-2 mb-1';
+          rDiv.innerHTML = `
+          <strong>Response:</strong> ${r.comment}<br>
+          <small class="text-muted">By: ${r.username} at ${new Date(r.updated_at).toLocaleString()}</small>
+        `;
+          container.appendChild(rDiv);
+        });
+      } catch (error) {
+        console.error('Error fetching responses:', error);
+        container.innerHTML = '<div class="alert alert-danger p-1">Error loading responses.</div>';
+      }
+    }
+  </script>
 </body>
 
 </html>

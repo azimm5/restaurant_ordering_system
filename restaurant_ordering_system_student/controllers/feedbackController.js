@@ -132,12 +132,12 @@ class FeedbackController {
         try {
             const { productId } = req.params;
             const feedback = await Feedback.getByProduct(productId);
-            res.json({
+                res.json({
                 success: true,
                 feedback
             });
         } catch (err) {
-            // Map structured error codes to correct HTTP responses
+                // Map structured error codes to correct HTTP responses
             if (err.code === 'P4040') {
                 return res.status(404).json({
                     success: false,

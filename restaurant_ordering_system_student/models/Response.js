@@ -6,15 +6,17 @@ class Response {
         await pool.query(query, [feedbackId, memberId, comment]);
     }
 
-    static async delete(responseId) {
-        const query = 'CALL delete_response($1)';
-        await pool.query(query, [responseId]);
-    }
-
+    // Retrieve all responses for a given feedback
     static async getByFeedback(feedbackId) {
         const query = 'SELECT * FROM get_response($1)';
-        const result = await pool.query(query, [feedbackId]);
-        return result.rows;
+        const { rows } = await pool.query(query, [feedbackId]);
+        return rows;
+    }
+
+    // Delete a response (only allowed if owned by the member)
+    static async delete(responseId, memberId) {
+        const query = 'CALL delete_response($1, $2)';
+        await pool.query(query, [responseId, memberId]);
     }
 }
 

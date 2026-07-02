@@ -30,7 +30,7 @@ class Feedback {
     }
 
     static async getByProduct(productId) {
-        const query = 'SELECT * FROM get_feedback_by_product($1)';
+        const query = 'SELECT * FROM get_feedback($1)';
         const result = await pool.query(query, [productId]);
         return result.rows;
     }

@@ -49,7 +49,7 @@ console.log('Session role:', req.session.userRole);
 }
 
 function ensureCustomer(req, res, next) {
-  if (req.session && req.session.userId && req.session.userRole === 'customer') {
+  if (req.session && req.session.userId && req.session.userRole === 'USER') {
 
     req.user = {
       user_id: req.session.userId,

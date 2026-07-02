@@ -4,14 +4,16 @@ const Dashboard = require('../models/Dashboard');
 class DashboardController {
     static async getSummary(req, res) {
         try {
-            const { start_date, end_date, category, customer_name, sort_by, sort_order } = req.query;
-            const orders = await Dashboard.getSummary(start_date, end_date, category, customer_name, sort_by, sort_order);
+            const { start_date, end_date, category, customer_name, sort_by, sort_order, status, min_amount, max_amount } = req.query;
+            const orders = await Dashboard.getSummary(start_date, end_date, category, customer_name, sort_by, sort_order, status, min_amount, max_amount );
             const categories = await Dashboard.getCategories();
+            const statuses = await Dashboard.getStatuses();
 
             res.json({
                 success: true,
                 orders,
                 categories,
+                statuses,
                 filters: req.query,
                 user: req.user
             });

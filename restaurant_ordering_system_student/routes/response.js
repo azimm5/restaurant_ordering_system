@@ -1,14 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const ResponseController = require('../controllers/ResponseController');
+const { ensureAuthenticated, ensureCustomer } = require('../middleware/auth');
 
-// POST /response/
-router.post('/', ResponseController.create);
+// Create a new response (customer only)
+router.post('/feedback/:feedbackId', ensureAuthenticated, ensureCustomer, ResponseController.create);
 
-// DELETE /response/:responseId
-router.delete('/:responseId', ResponseController.delete);
+// List responses for a feedback (authenticated users can view)
+router.get('/feedback/:feedbackId', ensureAuthenticated, ResponseController.listByFeedback);
 
-// GET /response/:feedbackId
-router.get('/:feedbackId', ResponseController.listByFeedback);
+// Delete a response (customer only)
+router.delete('/:responseId', ensureAuthenticated, ensureCustomer, ResponseController.delete);
 
 module.exports = router;
