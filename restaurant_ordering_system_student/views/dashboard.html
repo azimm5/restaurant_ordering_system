@@ -175,11 +175,19 @@
                     data.orders.forEach(order => {
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-          <td>${order.order_id}</td>
+          <td>#${order.order_id}</td>
           <td>${order.customer_name || order.username}</td>
           <td>${new Date(order.order_date).toLocaleDateString()}</td>
           <td>$${order.total_amount}</td>
-          <td>${order.status}</td>
+          <td>
+            <span class="badge ${order.status === 'COMPLETED' ? 'bg-success' :
+                                order.status === 'CANCELLED' ? 'bg-danger' :
+                                    order.status === 'PACKING' ? 'bg-warning' :
+                                        'bg-secondary'
+                            }">
+              ${order.status}
+            </span>
+          </td>
           <td>${order.item_count}</td>
           <td>${order.product_list}</td>
           `;

@@ -61,9 +61,9 @@ class ResponseController {
                 message: 'Response deleted successfully'
             });
         } catch (err) {
-            if (err.code === 'P4031') {
+            if (err.code === 'P4030') {
                 return res.status(403).json({ success: false, message: err.message }); // Forbidden delete
-            } else if (err.code === 'P4041') {
+            } else if (err.code === 'P4042') {
                 return res.status(404).json({ success: false, message: err.message }); // Response not found
             } else if (err.code === 'P4040') {
                 return res.status(404).json({ success: false, message: err.message }); // Member not found

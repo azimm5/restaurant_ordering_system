@@ -32,6 +32,8 @@ class FeedbackController {
                 return res.status(403).json({ success: false, message: err.message });
             } else if (err.code === 'P4032') {
                 return res.status(403).json({ success: false, message: err.message });
+            } else if (err.code === 'P4002') {
+                return res.status(403).json({ success: false, message: err.message });
             } else {
                 return res.status(500).json({ success: false, message: 'Internal server error' });
             }

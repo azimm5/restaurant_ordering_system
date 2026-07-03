@@ -34,7 +34,7 @@
       <a href="/member/products" class="btn btn-outline-secondary btn-sm">
         ← Back to Products
       </a>
-      <a id="make-feedback-link" href="#" class="btn btn-outline-secondary btn-sm">
+      <a id="make-feedback-link" href="#" class="btn btn-primary btn-sm">
         Make Feedback
       </a>
     </div>
@@ -106,16 +106,50 @@
     </div>
   </main>
 
+  <!-- Toast Container -->
+  <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
+    <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert"
+      aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body" id="toastMessage">
+          <!-- Message will be injected here -->
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+          aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
   <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js">
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Toast helper -->
+  <script src="/js/toastHelper.js"></script>
 
   <script>
-    document.addEventListener('DOMContentLoaded', fetchProductDetail);
+    // Grab productId from query string 
+    const productId = new URLSearchParams(window.location.search).get('id');
+    let currentUserId = null;
+
+    // Fetch current user from /api/auth/status
+    async function getCurrentUser() {
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        if (data.authenticated) {
+          currentUserId = data.user.id;
+        }
+      } catch (err) {
+        console.error('Failed to fetch auth status:', err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await getCurrentUser();   // ensure who is logged in
+      fetchProductDetail();
+    });
 
     async function fetchProductDetail() {
-      const productId = new URLSearchParams(window.location.search).get('id');
-
       const loading = document.getElementById('loading');
       const errorMessage = document.getElementById('error-message');
       const productDetail = document.getElementById('product-detail');
@@ -195,12 +229,6 @@
           return;
         }
 
-        if (data.feedback.length === 0) {
-          feedbackError.style.display = 'block';
-          feedbackError.textContent = data.message || 'No feedback yet.';
-          return;
-        }
-
         data.feedback.forEach(fb => {
           const fbCard = document.createElement('div');
           fbCard.className = 'card mb-2';
@@ -210,14 +238,23 @@
           <strong>Comment:</strong> ${fb.comment}<br>
           <small class="text-muted">Last Updated: ${new Date(fb.updated_at).toLocaleString()}</small><br>
           <small class="text-muted">By: ${fb.username}</small>
-        <!-- add response containers -->
-      <div id="responses-${fb.feedback_id}" class="mt-2"></div>
-    </div>      
-    `;
+        <!-- Responses section -->
+      <div id="responses-${fb.feedback_id}" class="mt-2">
+                <div id="responses-loading-${fb.feedback_id}" class="text-center py-2" style="display:none;">
+                  <div class="spinner-border text-secondary" role="status">
+                    <span class="visually-hidden">Loading responses...</span>
+                  </div>
+                </div>
+                <div id="responses-error-${fb.feedback_id}" class="alert alert-danger" style="display:none;">
+                  Failed to load responses.
+                </div>
+                <div id="responses-list-${fb.feedback_id}"></div>
+              </div>
+            </div>`;
           feedbackList.appendChild(fbCard);
 
           // trigger responses fetch for this feedback
-          fetchResponses(fb.feedback_id);
+          fetchResponses(fb.feedback_id, fb.member_id);
         });
 
       } catch (error) {
@@ -228,39 +265,97 @@
       }
     }
 
-    async function fetchResponses(feedbackId) {
-      const container = document.getElementById(`responses-${feedbackId}`);
-      container.innerHTML = '<small class="text-muted">Loading responses...</small>';
+    async function fetchResponses(feedbackId, feedbackAuthorId) {
+      const loading = document.getElementById(`responses-loading-${feedbackId}`);
+      const errorBox = document.getElementById(`responses-error-${feedbackId}`);
+      const list = document.getElementById(`responses-list-${feedbackId}`);
+
+      loading.style.display = 'block';
+      errorBox.style.display = 'none';
+      list.innerHTML = '';
 
       try {
         const response = await fetch(`/response/feedback/${feedbackId}`);
         const data = await response.json();
 
+        loading.style.display = 'none';
+
         if (!response.ok || !data.success) {
-          container.innerHTML = `<div class="alert alert-warning p-1">${data.message || 'No responses found.'}</div>`;
+          errorBox.style.display = 'block';
+          errorBox.textContent = data.message || 'Failed to load responses.';
+
+          // Show "Create Response" button if not the feedback author
+          if (currentUserId !== feedbackAuthorId) {
+            const createBtn = document.createElement('a');
+            createBtn.className = 'btn btn-sm btn-primary mt-2';
+            createBtn.textContent = 'Create Response';
+            createBtn.href = `/member/response/create?feedbackId=${feedbackId}&productId=${productId}`;
+            list.appendChild(createBtn);
+          }
           return;
         }
 
-        if (data.responses.length === 0) {
-          container.innerHTML = '<small class="text-muted">No responses yet.</small>';
-          return;
-        }
-
-        container.innerHTML = '';
         data.responses.forEach(r => {
           const rDiv = document.createElement('div');
           rDiv.className = 'border-start ps-2 mb-1';
           rDiv.innerHTML = `
           <strong>Response:</strong> ${r.comment}<br>
-          <small class="text-muted">By: ${r.username} at ${new Date(r.updated_at).toLocaleString()}</small>
+          <small class="text-muted">By: ${r.username} at ${new Date(r.created_at).toLocaleString()}</small>
         `;
-          container.appendChild(rDiv);
+
+          // Only show delete button if current user owns this response
+          if (r.member_id === currentUserId) {
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn btn-sm btn-danger mt-1';
+            delBtn.textContent = 'Delete';
+            delBtn.onclick = () => deleteResponse(r.response_id, feedbackId);
+
+            // Wrap in a div so it sits neatly below the text
+            const btnWrapper = document.createElement('div');
+            btnWrapper.appendChild(delBtn);
+            rDiv.appendChild(btnWrapper);
+          }
+
+          list.appendChild(rDiv);
         });
+
+        if (currentUserId !== feedbackAuthorId) {
+          const createBtn = document.createElement('a');
+          createBtn.className = 'btn btn-sm btn-primary mt-2';
+          createBtn.textContent = 'Create Response';
+          createBtn.href = `/member/response/create?feedbackId=${feedbackId}&productId=${productId}`;
+          list.appendChild(createBtn);
+        }
+
       } catch (error) {
         console.error('Error fetching responses:', error);
-        container.innerHTML = '<div class="alert alert-danger p-1">Error loading responses.</div>';
+        loading.style.display = 'none';
+        errorBox.style.display = 'block';
+        errorBox.textContent = 'Unexpected error occurred while loading responses.';
       }
     }
+
+    // Delete response function
+    async function deleteResponse(responseId, feedbackId) {
+      if (!confirm('Are you sure you want to delete this response?')) return;
+
+      try {
+        const res = await fetch(`/response/${responseId}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast(data.message || 'Response deleted successfully.', null,
+            () => fetchResponses(feedbackId) // reload responses after deletion
+          );
+        } else {
+          alert(data.message || 'Failed to delete response.');
+        }
+      } catch (err) {
+        console.error('Error deleting response:', err);
+        alert('Error deleting response.');
+      }
+    }
+
   </script>
 </body>
 
