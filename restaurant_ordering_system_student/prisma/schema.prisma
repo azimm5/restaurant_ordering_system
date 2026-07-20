@@ -35,9 +35,10 @@ model member {
   lastName     String      @map("last_name") @db.VarChar(50)
   createdAt    DateTime?   @default(now()) @map("created_at") @db.Timestamp(6)
   feedback     feedback[]
-  memberRole   memberRole?
+  memberRole   memberRole
   response     response[]
   saleOrder    saleOrder[]
+  carts      cart[]       // NEW: reverse relation to cart
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -60,6 +61,7 @@ model product {
   createdAt     DateTime?       @default(now()) @map("created_at") @db.Timestamp(6)
   feedback      feedback[]
   saleOrderItem saleOrderItem[]
+  cartItems     cartItem[]  // NEW: reverse relation to cartItem
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -101,4 +103,31 @@ model saleOrderItem {
   product     product?   @relation(fields: [productId], references: [productId], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("sale_order_item")
+}
+
+model cart {
+  cartId    Int       @id @default(autoincrement()) @map("cart_id")
+  memberId  Int       @map("member_id")
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // Relations
+  member   member   @relation(fields: [memberId], references: [memberId], onDelete: NoAction, onUpdate: NoAction, map: "cart_member_id_fk")
+  cartItem cartItem[]
+
+  @@map("cart")
+}
+
+model cartItem {
+  cartItemId Int     @id @default(autoincrement()) @map("cart_item_id")
+  cartId     Int     @map("cart_id")
+  productId  Int     @map("product_id")
+  quantity   Int
+  unitPrice  Decimal @map("unit_price") @db.Decimal(10, 2)
+  subtotal   Decimal @db.Decimal(10, 2)
+
+  // Relations
+  cart    cart    @relation(fields: [cartId], references: [cartId], onDelete: Cascade, onUpdate: NoAction, map: "cart_item_cart_id_fk")
+  product product @relation(fields: [productId], references: [productId], onDelete: NoAction, onUpdate: NoAction, map: "cart_item_product_id_fk")
+
+  @@map("cart_item")
 }
