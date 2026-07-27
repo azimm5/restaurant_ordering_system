@@ -1,6 +1,5 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -35,7 +34,7 @@ model member {
   lastName     String      @map("last_name") @db.VarChar(50)
   createdAt    DateTime?   @default(now()) @map("created_at") @db.Timestamp(6)
   feedback     feedback[]
-  memberRole   memberRole
+  memberRole memberRole? @relation("MemberRoles")
   response     response[]
   saleOrder    saleOrder[]
   carts      cart[]       // NEW: reverse relation to cart
@@ -45,8 +44,7 @@ model member {
 model memberRole {
   memberId Int    @id @map("member_id")
   role     String @db.VarChar(20)
-  member   member @relation(fields: [memberId], references: [memberId], onDelete: NoAction, onUpdate: NoAction)
-
+  member   member @relation("MemberRoles", fields: [memberId], references: [memberId], onDelete: NoAction, onUpdate: NoAction)  
   @@map("member_role")
 }
 
