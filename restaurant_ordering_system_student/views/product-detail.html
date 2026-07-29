@@ -34,9 +34,14 @@
       <a href="/member/products" class="btn btn-outline-secondary btn-sm">
         ← Back to Products
       </a>
-      <a id="make-feedback-link" href="#" class="btn btn-primary btn-sm">
-        Make Feedback
-      </a>
+      <div class="d-flex gap-2">
+        <a id="my-cart-link" href="#" class="btn btn-outline-primary btn-sm">
+          My Cart 🛒
+        </a>
+        <a id="make-feedback-link" href="#" class="btn btn-primary btn-sm">
+          Make Feedback
+        </a>
+      </div>
     </div>
 
     <!-- Loading State -->
@@ -78,6 +83,14 @@
               <tr>
                 <th scope="row">Created At</th>
                 <td id="detail-created-at"></td>
+              </tr>
+              <tr>
+                <th scope="row">Add to Cart</th>
+                <td>
+                  <a id="add-to-cart-link" href="#" class="btn btn-success btn-sm">
+                    Add to Cart
+                  </a>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -181,6 +194,18 @@
         document.getElementById('detail-price').textContent = `$${parseFloat(product.price).toFixed(2)}`;
         document.getElementById('detail-created-at').textContent = new Date(product.created_at).toLocaleDateString();
 
+        // Add to Cart link — disabled when the product isn't available
+        const addToCartLink = document.getElementById('add-to-cart-link');
+        if (product.is_available) {
+          addToCartLink.href = `/member/cart/create?ref=detail&productId=${product.product_id}`; addToCartLink.classList.remove('disabled');
+          addToCartLink.removeAttribute('aria-disabled');
+          addToCartLink.textContent = 'Add to Cart';
+        } else {
+          addToCartLink.href = '#';
+          addToCartLink.classList.add('disabled');
+          addToCartLink.setAttribute('aria-disabled', 'true');
+          addToCartLink.textContent = 'Unavailable';
+        }
         // Render availability badge
         const statusCell = document.getElementById('detail-status');
         statusCell.innerHTML = `
@@ -190,6 +215,10 @@
         `;
 
         productDetail.style.display = 'block';
+
+        // Set the "My Cart" link dynamically here after getting product id
+        const myCartLink = document.getElementById('my-cart-link');
+        myCartLink.href = `/member/cart/retrieve/all?ref=detail&productId=${product.product_id}`;
 
         // Set the "Make Feedback" link dynamically here after getting product id
         const feedbackLink = document.getElementById('make-feedback-link');

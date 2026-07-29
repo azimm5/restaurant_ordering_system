@@ -29,9 +29,14 @@
         <h4 class="card-title d-flex justify-content-between align-items-center">
           <span>Available Products</span>
           <!-- New Feedback Button -->
-          <a href="/member/feedback" class="btn btn-secondary btn-sm">
-            My Feedback
-          </a>
+          <div class="d-flex gap-2">
+            <a id="my-cart-link" href="#" class="btn btn-outline-primary btn-sm">
+              My Cart 🛒
+            </a>
+            <a href="/member/feedback" class="btn btn-secondary btn-sm">
+              My Feedback
+            </a>
+          </div>
         </h4>
 
         <div class="table-responsive">
@@ -96,12 +101,25 @@
               <a href="/member/product-detail?id=${product.product_id}" class="btn btn-primary btn-sm">
                 View Details
               </a>
+              ${product.is_available
+              ? `<a href="/member/cart/create?ref=products&productId=${product.product_id}" 
+             class="btn btn-success btn-sm ms-2">
+             Add to Cart
+           </a>`
+              : `<a href="#" class="btn btn-secondary btn-sm ms-2 disabled" 
+             aria-disabled="true">
+             Unavailable
+           </a>`
+            }
             </td>
           `;
 
           tbody.appendChild(row);
         });
 
+        // Set the "My Cart" link dynamically here after getting product id
+        const myCartLink = document.getElementById('my-cart-link');
+        myCartLink.href = `/member/cart/retrieve/all?ref=products`;
       } catch (error) {
         console.error('Error fetching products:', error);
         alert('Failed to load products.');
@@ -109,4 +127,5 @@
     }
   </script>
 </body>
+
 </html>
