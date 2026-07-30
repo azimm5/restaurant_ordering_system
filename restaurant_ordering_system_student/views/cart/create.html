@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add to Cart - Member View</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Your custom CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+  <!-- Navigation Bar (identical to products.html) -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="#">Restaurant Ordering System</a>
+      <div class="navbar-nav ms-auto align-items-center">
+        <span class="navbar-text me-3">Welcome, Member</span>
+        <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container mt-4">
+    <!-- Back Button -->
+    <div class="mb-3">
+      <a id="back-to-detail" href="#" class="btn btn-outline-secondary btn-sm">
+        ← Back to Product Detail
+      </a>
+    </div>
+
+    <h4 class="mb-3">Add Cart Items for <span id="product-name">...</span></h4>
+
+    <!-- Loading State -->
+    <div id="loading" class="text-center py-5" style="display:none;">
+      <div class="spinner-border text-secondary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div id="error-message" class="alert alert-danger" style="display:none;"></div>
+
+    <!-- Add to Cart Form -->
+    <form id="cart-form" class="card card-body" style="display:none;">
+      <div class="mb-3">
+        <label for="cart-quantity" class="form-label">Quantity</label>
+        <input type="number" id="cart-quantity" class="form-control" min="1" step="1" value="1" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Add</button>
+    </form>
+  </main>
+
+  <!-- Toast Container -->
+  <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
+    <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert"
+      aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body" id="toastMessage">
+          <!-- Message will be injected here -->
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+          aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Toast helper -->
+  <script src="/js/toastHelper.js"></script>
+
+  <script>
+    // Load the product so we can show its name and check availability
+    document.addEventListener('DOMContentLoaded', async () => {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get('ref');
+      const productId = params.get('productId');
+      const backLink = document.getElementById('back-to-detail');
+
+      // Default: back to Products
+      backLink.href = '/member/products';
+      backLink.textContent = '← Back to Products';
+
+      // Override if coming from Product Detail
+      if (ref === 'detail' && productId) {
+        backLink.href = `/member/product-detail?id=${productId}`;
+        backLink.textContent = '← Back to Product Detail';
+      }
+      const cartForm = document.getElementById('cart-form');
+      const errorMessage = document.getElementById('error-message');
+      const loading = document.getElementById('loading');
+      const productNameEl = document.getElementById('product-name');
+
+      if (!productId) {
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = 'No product specified.';
+        return;
+      }
+
+      try {
+        const response = await fetch(`/products/${productId}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.product) {
+          errorMessage.style.display = 'block';
+          errorMessage.textContent = data.message || 'Failed to load product.';
+          return;
+        }
+
+        productNameEl.textContent = data.product.name;
+        document.title = `Add Cart Items for ${data.product.name}`;
+
+        if (!data.product.is_available) {
+          errorMessage.style.display = 'block';
+          errorMessage.textContent = 'This product is currently unavailable and cannot be added to cart.';
+          return;
+        }
+
+        cartForm.style.display = 'block';
+        errorMessage.style.display = 'none';
+      } catch (err) {
+        console.error('Error loading product:', err);
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = 'Unexpected error occurred while loading product.';
+      }
+    });
+
+    // Handle add-to-cart submission
+    cartForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const quantity = document.getElementById('cart-quantity').value;
+
+      loading.style.display = 'block';
+
+      try {
+        const response = await fetch('/cart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId, quantity })
+        });
+
+        const data = await response.json();
+        loading.style.display = 'none';
+
+        if (data.success) {
+          errorMessage.style.display = 'none';
+          showToast(data.message);
+          document.getElementById('cart-quantity').value = 1;
+        } else {
+          errorMessage.style.display = 'block';
+          errorMessage.textContent = data.message || 'Failed to add item to cart.';
+        }
+      } catch (err) {
+        console.error('Error adding item to cart:', err);
+        loading.style.display = 'none';
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = 'Unexpected error occurred.';
+      }
+    });
+  </script>
+</body>
+
+</html>

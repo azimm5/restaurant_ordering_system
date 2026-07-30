@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Cart Item - Member View</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Restaurant Ordering System</a>
+            <div class="navbar-nav ms-auto align-items-center">
+                <span class="navbar-text me-3">Welcome, Member</span>
+                <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mt-4">
+        <!-- Back Button -->
+        <div class="mb-3">
+            <a href="/member/cart/retrieve/all" class="btn btn-outline-secondary btn-sm">
+                ← Back to My Cart
+            </a>
+        </div>
+        <h4 class="mb-3">Update Cart Item for <span id="product-name">...</span></h4>
+
+        <!-- Loading State -->
+        <div id="loading" class="text-center py-5">
+            <div class="spinner-border text-secondary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="alert alert-danger" style="display: none;">
+            Failed to load cart item.
+        </div>
+
+        <!-- Update Quantity Form -->
+        <form id="edit-cart-form" class="card card-body" style="display: none;">
+            <div class="mb-3">
+                <label for="cart-quantity" class="form-label">Quantity</label>
+                <input type="number" id="cart-quantity" class="form-control" min="1" step="1" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Quantity</button>
+            <a href="/member/cart/retrieve/all" class="btn btn-secondary ms-2">Cancel</a>
+        </form>
+    </main>
+
+    <!-- Toast Container -->
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
+        <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert"
+            aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMessage">
+                    <!-- Message will be injected here -->
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Toast helper -->
+    <script src="/js/toastHelper.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const cartItemId = params.get('cart_item_id');
+
+            const loading = document.getElementById('loading');
+            const errorMessage = document.getElementById('error-message');
+            const form = document.getElementById('edit-cart-form');
+            const productNameEl = document.getElementById('product-name');
+
+            if (!cartItemId) {
+                loading.style.display = 'none';
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'No cart item specified.';
+                return;
+            }
+
+            // Fetch existing cart item to pre-fill form
+            try {
+                const response = await fetch(`/cart/${cartItemId}`);
+                const data = await response.json();
+
+                loading.style.display = 'none';
+
+                if (response.ok && data.success && data.cartItem) {
+                    productNameEl.textContent = data.cartItem.product.name;
+                    document.title = `Update Cart Item for ${data.cartItem.product.name}`;
+                    document.getElementById('cart-quantity').value = data.cartItem.quantity;
+                    form.style.display = 'block';
+                } else {
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = data.message || errorMessage.textContent;
+                }
+            }
+            catch (err) {
+                console.error('Error loading cart item:', err);
+                loading.style.display = 'none';
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'Unexpected error occurred.';
+            }
+
+            // Handle form submission
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const quantity = document.getElementById('cart-quantity').value;
+
+                try {
+                    const response = await fetch(`/cart/${cartItemId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ quantity })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        showToast(data.message, '/member/cart/retrieve/all');
+                    } else {
+                        errorMessage.style.display = 'block';
+                        errorMessage.textContent = data.message || 'Failed to update cart item.';
+                    }
+                } catch (err) {
+                    console.error('Error updating cart item:', err);
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = 'Unexpected error occurred.';
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
