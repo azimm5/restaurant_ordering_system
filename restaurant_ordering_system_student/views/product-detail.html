@@ -197,7 +197,8 @@
         // Add to Cart link — disabled when the product isn't available
         const addToCartLink = document.getElementById('add-to-cart-link');
         if (product.is_available) {
-          addToCartLink.href = `/member/cart/create?ref=detail&productId=${product.product_id}`; addToCartLink.classList.remove('disabled');
+          addToCartLink.href = `/member/cart/create?ref=detail&productId=${product.product_id}`; 
+          addToCartLink.classList.remove('disabled');
           addToCartLink.removeAttribute('aria-disabled');
           addToCartLink.textContent = 'Add to Cart';
         } else {

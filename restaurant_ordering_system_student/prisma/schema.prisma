@@ -105,7 +105,7 @@ model saleOrderItem {
 
 model cart {
   cartId    Int       @id @default(autoincrement()) @map("cart_id")
-  memberId  Int       @map("member_id")
+  memberId  Int       @unique @map("member_id")
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
 
   // Relations
@@ -127,5 +127,6 @@ model cartItem {
   cart    cart    @relation(fields: [cartId], references: [cartId], onDelete: Cascade, onUpdate: NoAction, map: "cart_item_cart_id_fk")
   product product @relation(fields: [productId], references: [productId], onDelete: NoAction, onUpdate: NoAction, map: "cart_item_product_id_fk")
 
+  @@unique([cartId, productId], map: "cart_item_cart_product_unique")
   @@map("cart_item")
 }
