@@ -85,15 +85,16 @@
       const productId = params.get('productId');
       const backLink = document.getElementById('back-to-detail');
 
-      // Default: back to Products
-      backLink.href = '/member/products';
-      backLink.textContent = '← Back to Products';
-
-      // Override if coming from Product Detail
-      if (ref === 'detail' && productId) {
-        backLink.href = `/member/product-detail?id=${productId}`;
-        backLink.textContent = '← Back to Product Detail';
+      // If there is a referrer, use it
+      if (document.referrer) {
+        backLink.href = document.referrer;
+        backLink.textContent = '← Back';
+      } else {
+        // Fallback if no referrer
+        backLink.href = '/member/products';
+        backLink.textContent = '← Back to Products';
       }
+
       const cartForm = document.getElementById('cart-form');
       const errorMessage = document.getElementById('error-message');
       const loading = document.getElementById('loading');
@@ -131,41 +132,46 @@
         errorMessage.style.display = 'block';
         errorMessage.textContent = 'Unexpected error occurred while loading product.';
       }
-    });
 
-    // Handle add-to-cart submission
-    cartForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+      // Handle add-to-cart submission — now inside the same scope as cartForm, productId, etc.
+      cartForm.addEventListener('submit', async (e) => {
+        e.preventDefault();   // this is what stops the native form submit that was wiping your URL
 
-      const quantity = document.getElementById('cart-quantity').value;
+        const quantity = document.getElementById('cart-quantity').value;
 
-      loading.style.display = 'block';
+        loading.style.display = 'block';
 
-      try {
-        const response = await fetch('/cart', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId, quantity })
-        });
+        try {
+          const response = await fetch('/cart/items', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId, quantity })
+          });
 
-        const data = await response.json();
-        loading.style.display = 'none';
+          const data = await response.json();
+          loading.style.display = 'none';
 
-        if (data.success) {
-          errorMessage.style.display = 'none';
-          showToast(data.message);
-          document.getElementById('cart-quantity').value = 1;
-        } else {
+          if (data.success) {
+            errorMessage.style.display = 'none';
+            showToast(data.message, document.referrer);
+            document.getElementById('cart-quantity').value = 1;
+          } else if (data.existingCartItemId) {
+            // Already in cart — send them to Edit instead of showing a dead-end error
+            errorMessage.style.display = 'none';
+            showToast(data.message, `/member/cart/edit?cart_item_id=${data.existingCartItemId}`);
+          } else {
+            errorMessage.style.display = 'block';
+            errorMessage.textContent = data.message || 'Failed to add item to cart.';
+          }
+        } catch (err) {
+          console.error('Error adding item to cart:', err);
+          loading.style.display = 'none';
           errorMessage.style.display = 'block';
-          errorMessage.textContent = data.message || 'Failed to add item to cart.';
+          errorMessage.textContent = 'Unexpected error occurred.';
         }
-      } catch (err) {
-        console.error('Error adding item to cart:', err);
-        loading.style.display = 'none';
-        errorMessage.style.display = 'block';
-        errorMessage.textContent = 'Unexpected error occurred.';
-      }
+      });
     });
+
   </script>
 </body>
 

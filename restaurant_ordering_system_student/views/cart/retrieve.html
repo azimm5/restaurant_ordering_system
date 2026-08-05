@@ -199,7 +199,7 @@
       if (!confirm('Are you sure you want to delete this item?')) return;
 
       try {
-        const response = await fetch(`/cart/${cartItemId}`, { method: 'DELETE' });
+        const response = await fetch(`/cart/items/${cartItemId}`, { method: 'DELETE' });
         const data = await response.json();
         if (response.ok) {
           showToast(data.message, null, fetchCart); // reload cart after deletion

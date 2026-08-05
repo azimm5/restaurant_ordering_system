@@ -97,7 +97,7 @@
 
             // Fetch existing cart item to pre-fill form
             try {
-                const response = await fetch(`/cart/${cartItemId}`);
+                const response = await fetch(`/cart/items/${cartItemId}`);
                 const data = await response.json();
 
                 loading.style.display = 'none';
@@ -126,7 +126,7 @@
                 const quantity = document.getElementById('cart-quantity').value;
 
                 try {
-                    const response = await fetch(`/cart/${cartItemId}`, {
+                    const response = await fetch(`/cart/items/${cartItemId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ quantity })
