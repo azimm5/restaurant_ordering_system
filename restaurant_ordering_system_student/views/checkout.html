@@ -47,8 +47,6 @@
     <div id="checkout-section" style="display: none;">
       <h4 class="mb-3">Checkout</h4>
 
-      <div id="upsell-section" class="mb-3"></div>
-
       <div class="card">
         <div class="card-body">
           <div class="table-responsive">
@@ -149,17 +147,6 @@
           `;
           tbody.appendChild(row);
         });
-
-        const upsellSection = document.getElementById('upsell-section');
-        upsellSection.innerHTML = '';
-        if (data.upsells && data.upsells.length > 0) {
-          data.upsells.forEach(upsell => {
-            const banner = document.createElement('div');
-            banner.className = 'alert alert-warning py-2 mb-2';
-            banner.textContent = `🎉 ${upsell.message}`;
-            upsellSection.appendChild(banner);
-          });
-        }
 
         document.getElementById('summary-merchandise-subtotal').textContent = data.merchandiseSubtotal.toFixed(2);
 
