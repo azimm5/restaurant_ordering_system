@@ -180,10 +180,18 @@
 
         data.items.forEach(item => {
           const description = item.product.description
-            ? `${item.product.name} – ${item.product.description}`
+            ? `${item.product.name} - ${item.product.description}`
             : item.product.name;
 
+          const unavailableBadge = !item.product.isAvailable
+            ? ' <span class="badge bg-danger">Unavailable</span>'
+            : '';
+
           const row = document.createElement('tr');
+          if (!item.product.isAvailable) {
+            row.classList.add('table-warning');   // tint the whole row so it stands out at a glance
+          }
+
           row.innerHTML = `
             <td>${description}</td>
             <td>${Number(item.subtotal).toFixed(2)}</td>
