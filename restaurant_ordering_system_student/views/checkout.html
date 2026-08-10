@@ -47,8 +47,9 @@
     <div id="checkout-section" style="display: none;">
       <h4 class="mb-3">Checkout</h4>
 
-      <div class="card">
+      <div id="available-items-section" class="card">
         <div class="card-body">
+          <h5 class="card-title mb-3">Items Available for Order</h5>
           <div class="table-responsive">
             <table class="table table-striped align-middle">
               <thead>
@@ -67,7 +68,30 @@
         </div>
       </div>
 
-      <div class="card mt-3">
+      <div id="unavailable-items-section" class="card mt-3" style="display: none;">
+        <div class="card-body">
+          <h5 class="card-title mb-3">Unavailable Items Left in Cart</h5>
+          <div class="alert alert-warning">
+            These items will not be included when you place the order. They will remain in your cart after checkout.
+          </div>
+          <div class="table-responsive">
+            <table class="table table-striped align-middle">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Quantity</th>
+                  <th>Unit Price</th>
+                  <th>Line Subtotal</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="unavailable-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="order-summary-section" class="card mt-3">
         <div class="card-body">
           <h5 class="card-title mb-3">Order Summary</h5>
           <div class="d-flex justify-content-between">
@@ -110,12 +134,21 @@
       const errorMessage = document.getElementById('error-message');
       const emptyCart = document.getElementById('empty-cart');
       const checkoutSection = document.getElementById('checkout-section');
+      const availableItemsSection = document.getElementById('available-items-section');
+      const unavailableItemsSection = document.getElementById('unavailable-items-section');
+      const orderSummarySection = document.getElementById('order-summary-section');
       const tbody = document.getElementById('checkout-table-body');
+      const unavailableTbody = document.getElementById('unavailable-table-body');
 
       loading.style.display = 'block';
       errorMessage.style.display = 'none';
       emptyCart.style.display = 'none';
       checkoutSection.style.display = 'none';
+      availableItemsSection.style.display = 'block';
+      unavailableItemsSection.style.display = 'none';
+      orderSummarySection.style.display = 'block';
+      document.getElementById('product-discount-row').style.display = 'none';
+      document.getElementById('cart-value-discount-row').style.display = 'none';
 
       try {
         const response = await fetch('/checkout');
@@ -129,12 +162,9 @@
           return;
         }
 
-        if (data.items.length === 0) {
-          emptyCart.style.display = 'block';
-          return;
-        }
-
         tbody.innerHTML = '';
+        unavailableTbody.innerHTML = '';
+
         data.items.forEach(item => {
           const row = document.createElement('tr');
           row.innerHTML = `
@@ -147,6 +177,32 @@
           `;
           tbody.appendChild(row);
         });
+
+        if (data.unavailableItems && data.unavailableItems.length > 0) {
+          unavailableItemsSection.style.display = 'block';
+
+          data.unavailableItems.forEach(item => {
+            const row = document.createElement('tr');
+            row.classList.add('table-warning');
+            row.innerHTML = `
+              <td>${item.productName}</td>
+              <td>${item.quantity}</td>
+              <td>${item.unitPrice.toFixed(2)}</td>
+              <td>${item.lineSubtotal.toFixed(2)}</td>
+              <td><span class="badge bg-danger">${item.reason}</span></td>
+            `;
+            unavailableTbody.appendChild(row);
+          });
+        }
+
+        if (data.items.length === 0) {
+          availableItemsSection.style.display = 'none';
+          orderSummarySection.style.display = 'none';
+          emptyCart.style.display = 'block';
+          emptyCart.textContent = 'No available items can be checked out. The unavailable items below will remain in your cart.';
+          checkoutSection.style.display = 'block';
+          return;
+        }
 
         document.getElementById('summary-merchandise-subtotal').textContent = data.merchandiseSubtotal.toFixed(2);
 

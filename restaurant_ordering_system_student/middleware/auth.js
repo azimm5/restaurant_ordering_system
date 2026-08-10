@@ -30,7 +30,7 @@ function ensureAdmin(req, res, next) {
       user_id: req.session.userId,
       role: req.session.userRole
     };
-console.log('Session role:', req.session.userRole);
+    console.log('Session role:', req.session.userRole);
     return next();
   }
 
@@ -76,7 +76,7 @@ function ensureCustomer(req, res, next) {
 function redirectIfAuthenticated(req, res, next) {
   if (req.session && req.session.userId) {
     const redirectUrl =
-      req.session.userRole === 'admin' ? '/dashboard' : '/menu';
+      req.session.userRole === 'ADMIN' ? '/dashboard' : '/member/products';
     return res.redirect(redirectUrl);
   }
   return next();

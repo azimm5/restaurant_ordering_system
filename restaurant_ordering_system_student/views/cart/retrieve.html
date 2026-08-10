@@ -79,13 +79,11 @@
 
       <!-- Cart Summary -->
       <div class="card mt-3">
-        <div class="card mt-3">
-          <div class="card-body text-end">
-            <h5 class="card-title">Cart Summary</h5>
-            <p class="mb-1">Total Quantity: <strong id="summary-quantity">0</strong></p>
-            <p class="mb-3">Total Checkout Price: <strong id="summary-price">0.00</strong></p>
-            <button id="checkout-btn" class="btn btn-success">Checkout</button>
-          </div>
+        <div class="card-body text-end">
+          <h5 class="card-title">Cart Summary</h5>
+          <p class="mb-1">Total Quantity: <strong id="summary-quantity">0</strong></p>
+          <p class="mb-3">Total Checkout Price: <strong id="summary-price">0.00</strong></p>
+          <button id="checkout-btn" class="btn btn-success">Checkout</button>
         </div>
       </div>
       <!-- Upsell Modal -->
@@ -193,7 +191,7 @@
           }
 
           row.innerHTML = `
-            <td>${description}</td>
+            <td>${description}${unavailableBadge}</td>
             <td>${Number(item.subtotal).toFixed(2)}</td>
             <td>${Number(item.unitPrice).toFixed(2)}</td>
             <td>${item.quantity}</td>

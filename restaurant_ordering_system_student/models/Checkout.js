@@ -87,15 +87,27 @@ module.exports = {
 
 // Calculates the checkout summary including item discounts, cart discount, delivery fee, and grand total. 
 module.exports.calculateCheckoutSummary = async function calculateCheckoutSummary(cartId) {
-    const items = await prisma.cartItem.findMany({
+    const allItems = await prisma.cartItem.findMany({
         where: { cartId },
         include: { product: true },
         orderBy: { cartItemId: 'asc' }
     });
+    const unavailableItems = allItems
+        .filter(item => !item.product.isAvailable)
+        .map(item => ({
+            cartItemId: item.cartItemId,
+            productName: item.product.name,
+            quantity: item.quantity,
+            unitPrice: Number(item.unitPrice),
+            lineSubtotal: Number(item.subtotal),
+            reason: 'Product is currently unavailable'
+        }));
+    const items = allItems.filter(item => item.product.isAvailable);
 
     if (!items || items.length === 0) {
         return {
             items: [],
+            unavailableItems,
             merchandiseSubtotal: 0,
             productDiscountTotal: 0,
             afterProductDiscount: 0,
@@ -199,6 +211,7 @@ module.exports.calculateCheckoutSummary = async function calculateCheckoutSummar
 
     return {
         items: itemBreakdown,
+        unavailableItems,
         merchandiseSubtotal: Number(merchandiseSubtotal.toFixed(2)),
         productDiscountTotal,
         afterProductDiscount,
