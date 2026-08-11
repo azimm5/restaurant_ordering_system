@@ -31,16 +31,23 @@ module.exports.createCartItem = function createCartItem(cartId, productId, quant
 
 // Update quantity of a cart item
 module.exports.updateCartItem = function updateCartItem(cartItemId, quantity) {
+    const newQuantity = Number(quantity);
+
     return prisma.cartItem.findUnique({ where: { cartItemId: cartItemId } })
         .then(existing => {
             if (!existing) {
                 throw new Error(`CartItem ${cartItemId} not found`);
             }
+            if (existing.quantity === newQuantity) {
+                const noChangesError = new Error('No changes made to cart item quantity.');
+                noChangesError.code = 'NO_CHANGES';
+                throw noChangesError;
+            }
             return prisma.cartItem.update({
                 where: { cartItemId: cartItemId },
                 data: {
-                    quantity: Number(quantity),
-                    subtotal: Number(quantity) * Number(existing.unitPrice)
+                    quantity: newQuantity,
+                    subtotal: newQuantity * Number(existing.unitPrice)
                 },
                 include: { product: true }
             });

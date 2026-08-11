@@ -639,7 +639,7 @@ CREATE FUNCTION public.get_sale_order_summary(p_start_date date DEFAULT NULL::da
 -- Name: place_orders(integer, integer); Type: PROCEDURE; Schema: public; Owner: -
 --
 
-CREATE PROCEDURE public.place_orders(IN p_member_id integer, IN p_cart_id integer, OUT p_order_id integer)
+CREATE PROCEDURE public.place_orders(IN p_member_id integer, IN p_cart_id integer, IN p_grand_total numeric(10,2), OUT p_order_id integer)
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -695,7 +695,7 @@ BEGIN
                 VALUES (
                     p_member_id,
                     NOW(),
-                    0,
+                    p_grand_total,
                     'PACKING'
                 )
                 RETURNING order_id INTO v_order_id;
@@ -720,12 +720,7 @@ BEGIN
                     v_item.unit_price,
                     v_item.subtotal
                 );
-
-                -- Add this item's subtotal to the order total.
-                UPDATE sale_order
-                SET total_amount = total_amount + v_item.subtotal
-                WHERE order_id = v_order_id;
-
+                
                 -- Remove the successfully processed item from the cart.
                 DELETE FROM cart_item
                 WHERE cart_item_id = v_item.cart_item_id;

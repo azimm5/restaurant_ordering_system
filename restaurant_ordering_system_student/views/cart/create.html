@@ -158,7 +158,7 @@
           } else if (data.existingCartItemId) {
             // Already in cart — send them to Edit instead of showing a dead-end error
             errorMessage.style.display = 'none';
-            showToast(data.message, `/member/cart/edit?cart_item_id=${data.existingCartItemId}`);
+            showToast(data.message, `/member/cart/edit?cart_item_id=${data.existingCartItemId}`, null, 'warning');
           } else {
             errorMessage.style.display = 'block';
             errorMessage.textContent = data.message || 'Failed to add item to cart.';

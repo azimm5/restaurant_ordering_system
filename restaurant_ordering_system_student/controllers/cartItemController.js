@@ -61,6 +61,9 @@ class CartItemController {
 
             return res.json({ success: true, message: 'Cart item updated successfully' });
         } catch (err) {
+            if (err.code === 'NO_CHANGES') {
+                return res.status(400).json({ success: false, message: err.message });
+            }
             console.error('Error updating cart item:', err);
             return res.status(500).json({ success: false, message: 'Unexpected error while updating cart item.' });
         }

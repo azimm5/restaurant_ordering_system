@@ -236,7 +236,20 @@
       if (!confirm('Place this order now?')) return;
 
       try {
-        const response = await fetch('/orders/place', { method: 'POST' });
+        const grandTotal = Number(
+          document.getElementById('summary-grand-total').textContent
+        );
+
+        const response = await fetch('/orders/place', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            grandTotal
+          })
+        }); 
+        
         const data = await response.json();
 
         if (data.success) {

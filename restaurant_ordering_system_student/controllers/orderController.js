@@ -8,8 +8,9 @@ class OrderController {
         try {
             const memberId = req.session.userId;
             const cart = await Cart.getOrCreateCart(memberId);
+            const { grandTotal } = req.body;
 
-            const orderId = await Order.placeOrders(memberId, cart.cartId);
+            const orderId = await Order.placeOrders(memberId, cart.cartId, grandTotal);
 
             if (!orderId) {
                 return res.status(200).json({
