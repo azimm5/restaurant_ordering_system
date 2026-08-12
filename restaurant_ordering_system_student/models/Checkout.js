@@ -26,17 +26,9 @@ async function findDeliveryTier(orderValue, currentFee = null, type = 'best') {
     return prisma.deliveryFeeRule.findFirst({
         where: {
             isActive: true,
-            minOrderValue: isBest ? { lte: orderValue } : { gt: orderValue },
-            ...(isBest
-                ? {
-                    OR: [
-                        { maxOrderValue: null },
-                        { maxOrderValue: { gte: orderValue } }
-                    ]
-                }
-                : {
-                    deliveryFee: { lt: currentFee }
-                })
+            minOrderValue: isBest
+                ? { lte: orderValue }
+                : { gt: orderValue }
         },
         // ensures the largest/lowest qualifying tier is picked for best/next respectively
         orderBy: { minOrderValue: isBest ? 'desc' : 'asc' }
@@ -333,11 +325,7 @@ module.exports.calculateCheckoutSummary = async function calculateCheckoutSummar
         deliveryFee,
         deliveryFeeRule: deliveryRule
             ? {
-                minOrderValue: Number(deliveryRule.minOrderValue),
-                maxOrderValue:
-                    deliveryRule.maxOrderValue !== null
-                        ? Number(deliveryRule.maxOrderValue)
-                        : null
+                minOrderValue: Number(deliveryRule.minOrderValue)
             }
             : null,
         grandTotal,

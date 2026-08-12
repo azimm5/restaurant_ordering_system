@@ -114,7 +114,12 @@ module.exports.getCartItemById = function getCartItemById(cartItemId) {
 // Uses Prisma aggregate() at the database level
 module.exports.getCartSummary = async function getCartSummary(cartId) {
     const items = await prisma.cartItem.findMany({
-        where: { cartId: cartId },
+        where: {
+            cartId: cartId,
+            product: {
+                isAvailable: true
+            }
+        }, 
         select: { quantity: true, unitPrice: true }
     });
 

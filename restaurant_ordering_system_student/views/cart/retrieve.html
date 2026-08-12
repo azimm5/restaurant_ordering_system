@@ -192,7 +192,7 @@
 
           row.innerHTML = `
             <td>${description}${unavailableBadge}</td>
-            <td>${Number(item.subtotal).toFixed(2)}</td>
+            <td>${(Number(item.unitPrice) * Number(item.quantity)).toFixed(2)}</td>
             <td>${Number(item.unitPrice).toFixed(2)}</td>
             <td>${item.quantity}</td>
             <td>

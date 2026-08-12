@@ -160,7 +160,6 @@ model cartValueDiscountRule {
 model deliveryFeeRule {
   deliveryFeeRuleId Int       @id @default(autoincrement()) @map("delivery_fee_rule_id")
   minOrderValue     Decimal   @map("min_order_value") @db.Decimal(10, 2)
-  maxOrderValue     Decimal?  @map("max_order_value") @db.Decimal(10, 2) // null = no upper bound (top tier)
   deliveryFee       Decimal   @map("delivery_fee") @db.Decimal(10, 2)
   isActive          Boolean   @default(true) @map("is_active")
   createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
