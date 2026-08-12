@@ -1,6 +1,7 @@
 const Cart = require('../models/Cart');
 const CartItem = require('../models/CartItem');
 const Order = require('../models/Order');
+const Checkout = require('../models/Checkout');
 
 class OrderController {
     // POST /orders/place - place orders for all currently-available items in the member's cart
@@ -8,7 +9,17 @@ class OrderController {
         try {
             const memberId = req.session.userId;
             const cart = await Cart.getOrCreateCart(memberId);
-            const { grandTotal } = req.body;
+
+            // Recompute the grand total on the server instead of trusting req.body.
+            const summary = await Checkout.calculateCheckoutSummary(cart.cartId);
+            const grandTotal = summary.grandTotal;
+
+            if (!summary.items.length) {
+                return res.status(200).json({
+                    success: false,
+                    message: 'None of the items in your cart are currently available. No order was placed.'
+                });
+            }
 
             const orderId = await Order.placeOrders(memberId, cart.cartId, grandTotal);
 

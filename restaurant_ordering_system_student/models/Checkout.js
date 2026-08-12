@@ -4,13 +4,14 @@ const { PrismaPg } = require('@prisma/adapter-pg');
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+
 // ---------- Generic Helpers ----------
+
 async function findCartValueTier(cartSubtotal, type = 'best') {
     const isBest = type === 'best';
 
-    return prisma.productDiscountRule.findFirst({
+    return prisma.cartValueDiscountRule.findFirst({
         where: {
-            discountType: 'CART_VALUE',
             isActive: true,
             minCartValue: isBest ? { lte: cartSubtotal } : { gt: cartSubtotal }
         },
@@ -45,9 +46,8 @@ async function findDeliveryTier(orderValue, currentFee = null, type = 'best') {
 async function findProductQuantityTier(productId, quantity, type = 'best') {
     const isBest = type === 'best';
 
-    return prisma.productDiscountRule.findFirst({
+    return prisma.productQuantityDiscountRule.findFirst({
         where: {
-            discountType: 'PRODUCT_QUANTITY',
             productId,
             isActive: true,
             minQuantity: isBest ? { lte: quantity } : { gt: quantity }
@@ -57,41 +57,46 @@ async function findProductQuantityTier(productId, quantity, type = 'best') {
     });
 }
 
+
 // ---------- Exports ----------
+
 module.exports = {
 
-    // Find the best (highest) product-quantity discount tier a given quantity qualifies for.
+    // Find the best product-quantity discount for a product and quantity.
     getBestProductQuantityDiscount: (productId, quantity) =>
         findProductQuantityTier(productId, quantity, 'best'),
 
-    // Find the NEXT product-quantity tier not yet reached — used for upsell messaging.
+    // Find the next product-quantity tier for upsell messaging.
     getNextProductQuantityTier: (productId, quantity) =>
         findProductQuantityTier(productId, quantity, 'next'),
 
-    // Find the best (highest) cart-value discount tier a given subtotal qualifies for.
+    // Find the best cart-value discount for a subtotal.
     getBestCartValueDiscount: (cartSubtotal) =>
         findCartValueTier(cartSubtotal, 'best'),
 
-    // Find the NEXT cart-value tier not yet reached — used for upsell messaging.
+    // Find the next cart-value tier for upsell messaging.
     getNextCartValueTier: (cartSubtotal) =>
         findCartValueTier(cartSubtotal, 'next'),
 
-    // Find the best (highest) delivery fee tier a given order value falls into.
+    // Find the delivery fee for an order value.
     getDeliveryFeeForOrderValue: (orderValue) =>
         findDeliveryTier(orderValue, null, 'best'),
 
-    // Find the NEXT (cheaper) delivery tier not yet reached — used for upsell messaging.
+    // Find the next cheaper delivery tier for upsell messaging.
     getNextDeliveryTier: (orderValue, currentFee) =>
         findDeliveryTier(orderValue, currentFee, 'next')
 };
 
-// Calculates the checkout summary including item discounts, cart discount, delivery fee, and grand total. 
+
+// Calculates the complete checkout summary.
 module.exports.calculateCheckoutSummary = async function calculateCheckoutSummary(cartId) {
+
     const allItems = await prisma.cartItem.findMany({
         where: { cartId },
         include: { product: true },
         orderBy: { cartItemId: 'asc' }
     });
+
     const unavailableItems = allItems
         .filter(item => !item.product.isAvailable)
         .map(item => ({
@@ -102,9 +107,10 @@ module.exports.calculateCheckoutSummary = async function calculateCheckoutSummar
             lineSubtotal: Number(item.subtotal),
             reason: 'Product is currently unavailable'
         }));
+
     const items = allItems.filter(item => item.product.isAvailable);
 
-    if (!items || items.length === 0) {
+    if (items.length === 0) {
         return {
             items: [],
             unavailableItems,
@@ -115,9 +121,45 @@ module.exports.calculateCheckoutSummary = async function calculateCheckoutSummar
             cartValueDiscountAmount: 0,
             deliveryFee: 0,
             deliveryFeeRule: null,
-            grandTotal: 0
+            grandTotal: 0,
+            upsells: []
         };
     }
+
+    // Fetch all active product-quantity rules in one query
+    // This avoids an N+1 query pattern when processing cart items.
+    const productIds = [...new Set(items.map(item => item.productId))];
+
+    const productQuantityRules = await prisma.productQuantityDiscountRule.findMany({
+        where: {
+            isActive: true,
+            productId: { in: productIds }
+        },
+        orderBy: {
+            minQuantity: 'desc'
+        }
+    });
+
+
+    // Find the best product-quantity discount from the rules already loaded.
+    function getBestProductRule(productId, quantity) {
+        return productQuantityRules.find(rule =>
+            rule.productId === productId &&
+            rule.minQuantity <= quantity
+        ) || null;
+    }
+
+
+    // Find the next product-quantity tier from the rules already loaded.
+    function getNextProductRule(productId, quantity) {
+        return productQuantityRules
+            .filter(rule =>
+                rule.productId === productId &&
+                rule.minQuantity > quantity
+            )
+            .sort((a, b) => Number(a.minQuantity) - Number(b.minQuantity))[0] || null;
+    }
+
 
     // 1. Apply the best product-quantity discount to each line item
     let merchandiseSubtotal = 0;
@@ -129,9 +171,18 @@ module.exports.calculateCheckoutSummary = async function calculateCheckoutSummar
         const lineSubtotal = Number(item.subtotal);
         merchandiseSubtotal += lineSubtotal;
 
-        const discountRule = await module.exports.getBestProductQuantityDiscount(item.productId, item.quantity);
-        const discountPercent = discountRule ? Number(discountRule.discountPercent) : 0;
-        const discountAmount = Number((lineSubtotal * discountPercent / 100).toFixed(2));
+        const discountRule = getBestProductRule(
+            item.productId,
+            item.quantity
+        );
+
+        const discountPercent = discountRule
+            ? Number(discountRule.discountPercent)
+            : 0;
+
+        const discountAmount = Number(
+            (lineSubtotal * discountPercent / 100).toFixed(2)
+        );
 
         productDiscountTotal += discountAmount;
 
@@ -144,85 +195,152 @@ module.exports.calculateCheckoutSummary = async function calculateCheckoutSummar
             discountRuleName: discountRule ? discountRule.name : null,
             discountPercent,
             discountAmount,
-            lineTotal: Number((lineSubtotal - discountAmount).toFixed(2)) // Final price for this item after its discount
+            lineTotal: Number(
+                (lineSubtotal - discountAmount).toFixed(2)
+            )
         });
     }
-    // Cart subtotal after all product-level discounts
-    const afterProductDiscount = Number((merchandiseSubtotal - productDiscountTotal).toFixed(2));
 
-    // 2. Stack a cart-value discount on top, based on the post-item-discount total
-    const cartValueRule = await module.exports.getBestCartValueDiscount(afterProductDiscount);
-    const cartValueDiscountPercent = cartValueRule ? Number(cartValueRule.discountPercent) : 0;
-    const cartValueDiscountAmount = Number((afterProductDiscount * cartValueDiscountPercent / 100).toFixed(2));
 
-    // Subtotal after both product discounts and cart‑value discount.
-    const finalMerchandiseTotal = Number((afterProductDiscount - cartValueDiscountAmount).toFixed(2));
+    // Calculate subtotal after product-level discounts
+    const afterProductDiscount = Number(
+        (merchandiseSubtotal - productDiscountTotal).toFixed(2)
+    );
 
-    // 3. Delivery fee is based on the final, fully-discounted order value
-    const deliveryRule = await module.exports.getDeliveryFeeForOrderValue(finalMerchandiseTotal);
-    const deliveryFee = deliveryRule ? Number(deliveryRule.deliveryFee) : 0;
 
-    // Adds delivery fee to the discounted merchandise total.
-    const grandTotal = Number((finalMerchandiseTotal + deliveryFee).toFixed(2));
+    // 2. Apply the best cart-value discount
+    const cartValueRule =
+        await module.exports.getBestCartValueDiscount(afterProductDiscount);
 
-    // Build upsell nudges: for each discount dimension, find the next unreached
-    // tier and how far away the customer is from it.
+    const cartValueDiscountPercent = cartValueRule
+        ? Number(cartValueRule.discountPercent)
+        : 0;
+
+    const cartValueDiscountAmount = Number(
+        (afterProductDiscount * cartValueDiscountPercent / 100).toFixed(2)
+    );
+
+    const finalMerchandiseTotal = Number(
+        (afterProductDiscount - cartValueDiscountAmount).toFixed(2)
+    );
+
+
+    // 3. Calculate delivery fee using the final discounted value
+    const deliveryRule =
+        await module.exports.getDeliveryFeeForOrderValue(finalMerchandiseTotal);
+
+    const deliveryFee = deliveryRule
+        ? Number(deliveryRule.deliveryFee)
+        : 0;
+
+    const grandTotal = Number(
+        (finalMerchandiseTotal + deliveryFee).toFixed(2)
+    );
+
+
+    // 4. Build upsell recommendations
     const upsells = [];
 
-    // Per-product quantity upsells (one per item, if a next tier exists)
+    // Product-quantity upsells reuse the rules already fetched above.
     for (const line of itemBreakdown) {
-        const cartLineItem = items.find(i => i.cartItemId === line.cartItemId);
-        const nextTier = await module.exports.getNextProductQuantityTier(cartLineItem.productId, line.quantity);
+        const nextTier = getNextProductRule(
+            items.find(item => item.cartItemId === line.cartItemId).productId,
+            line.quantity
+        );
+
         if (nextTier) {
-            const quantityNeeded = nextTier.minQuantity - line.quantity;
+            const quantityNeeded =
+                nextTier.minQuantity - line.quantity;
+
             upsells.push({
                 type: 'PRODUCT_QUANTITY',
                 productName: line.productName,
-                quantityNeeded: quantityNeeded,
-                message: `Add ${quantityNeeded} more ${line.productName} to unlock "${nextTier.name}"!`
+                quantityNeeded,
+                message:
+                    `Add ${quantityNeeded} more ${line.productName} to unlock "${nextTier.name}"!`
             });
         }
     }
 
+
     // Cart-value upsell
-    const nextCartValueTier = await module.exports.getNextCartValueTier(afterProductDiscount);
+    const nextCartValueTier =
+        await module.exports.getNextCartValueTier(afterProductDiscount);
+
     if (nextCartValueTier) {
-        const amountNeeded = Number((Number(nextCartValueTier.minCartValue) - afterProductDiscount).toFixed(2));
+        const amountNeeded = Number(
+            (
+                Number(nextCartValueTier.minCartValue) -
+                afterProductDiscount
+            ).toFixed(2)
+        );
+
         upsells.push({
             type: 'CART_VALUE',
-            amountNeeded: amountNeeded,
-            message: `Spend $${amountNeeded.toFixed(2)} more to unlock "${nextCartValueTier.name}"!`
+            amountNeeded,
+            message:
+                `Spend $${amountNeeded.toFixed(2)} more to unlock "${nextCartValueTier.name}"!`
         });
     }
 
+
     // Delivery-fee upsell
-    const nextDeliveryTier = await module.exports.getNextDeliveryTier(finalMerchandiseTotal, deliveryFee);
+    const nextDeliveryTier =
+        await module.exports.getNextDeliveryTier(
+            finalMerchandiseTotal,
+            deliveryFee
+        );
+
     if (nextDeliveryTier) {
-        const amountNeeded = Number((Number(nextDeliveryTier.minOrderValue) - finalMerchandiseTotal).toFixed(2));
-        const deliveryDescription = Number(nextDeliveryTier.deliveryFee) === 0
-            ? 'free delivery'
-            : `delivery for just $${Number(nextDeliveryTier.deliveryFee).toFixed(2)}`;
+        const amountNeeded = Number(
+            (
+                Number(nextDeliveryTier.minOrderValue) -
+                finalMerchandiseTotal
+            ).toFixed(2)
+        );
+
+        const deliveryDescription =
+            Number(nextDeliveryTier.deliveryFee) === 0
+                ? 'free delivery'
+                : `delivery for just $${Number(
+                    nextDeliveryTier.deliveryFee
+                ).toFixed(2)}`;
+
         upsells.push({
             type: 'DELIVERY',
-            amountNeeded: amountNeeded,
-            message: `Spend $${amountNeeded.toFixed(2)} more for ${deliveryDescription}!`
+            amountNeeded,
+            message:
+                `Spend $${amountNeeded.toFixed(2)} more for ${deliveryDescription}!`
         });
     }
+
 
     return {
         items: itemBreakdown,
         unavailableItems,
-        merchandiseSubtotal: Number(merchandiseSubtotal.toFixed(2)),
+        merchandiseSubtotal: Number(
+            merchandiseSubtotal.toFixed(2)
+        ),
         productDiscountTotal,
         afterProductDiscount,
-        cartValueDiscount: cartValueRule ? { name: cartValueRule.name, percent: cartValueDiscountPercent } : null,
+        cartValueDiscount: cartValueRule
+            ? {
+                name: cartValueRule.name,
+                percent: cartValueDiscountPercent
+            }
+            : null,
         cartValueDiscountAmount,
         deliveryFee,
         deliveryFeeRule: deliveryRule
-            ? { minOrderValue: Number(deliveryRule.minOrderValue), maxOrderValue: deliveryRule.maxOrderValue !== null ? Number(deliveryRule.maxOrderValue) : null }
+            ? {
+                minOrderValue: Number(deliveryRule.minOrderValue),
+                maxOrderValue:
+                    deliveryRule.maxOrderValue !== null
+                        ? Number(deliveryRule.maxOrderValue)
+                        : null
+            }
             : null,
         grandTotal,
         upsells
     };
-
 };

@@ -7,38 +7,71 @@ function isValidQuantity(quantity) {
 }
 
 class CartItemController {
-    // POST /cart/items - add an item
+    // Add an item to the user's cart
+    // POST /cart/items
     static async create(req, res) {
         try {
             const memberId = req.session.userId;
             const { productId, quantity } = req.body;
 
             if (!productId || !isValidQuantity(quantity)) {
-                return res.status(400).json({ success: false, message: 'Valid product and quantity required.' });
+                return res.status(400).json({
+                    success: false,
+                    message: 'Valid product and quantity required.'
+                });
             }
 
+            // Verify the product exists and is available
             const product = await CartItem.getProductById(productId);
-            if (!product) return res.status(404).json({ success: false, message: 'Product not found.' });
-            if (!product.isAvailable) return res.status(400).json({ success: false, message: 'Product unavailable.' });
+
+            if (!product) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Product not found.'
+                });
+            }
+
+            if (!product.isAvailable) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Product unavailable.'
+                });
+            }
 
             const cart = await Cart.getOrCreateCart(memberId);
-            const cartItem = await CartItem.createCartItem(cart.cartId, productId, quantity, Number(product.price));
 
-            return res.status(201).json({ success: true, message: 'Item added!', cartItem });
+            const cartItem = await CartItem.createCartItem(
+                cart.cartId,
+                productId,
+                quantity,
+                Number(product.price)
+            );
+
+            return res.status(201).json({
+                success: true,
+                message: 'Item added!',
+                cartItem
+            });
         } catch (err) {
-            if (err.existingCartItemId) {
+            // Handle duplicate items using the model's error code
+            if (err.code === CartItem.ERROR_CODES.DUPLICATE_ITEM) {
                 return res.status(409).json({
                     success: false,
-                    message: 'This item is already in your cart. Redirecting you to update its quantity...',
+                    message: `This item is already in your cart. Redirecting you to update its quantity...`,
                     existingCartItemId: err.existingCartItemId
                 });
             }
+
             console.error('Error adding item:', err);
-            return res.status(500).json({ success: false, message: 'Unexpected error while adding item to cart.' });
+            return res.status(500).json({
+                success: false,
+                message: 'Unexpected error while adding item to cart.'
+            });
         }
     }
 
-    // PUT /cart/:cartItemId - update quantity of a cart item
+    // Update the quantity of a cart item
+    // PUT /cart/:cartItemId
     static async update(req, res) {
         try {
             const memberId = req.session.userId;
@@ -46,70 +79,138 @@ class CartItemController {
             const { quantity } = req.body;
 
             if (!isValidQuantity(quantity)) {
-                return res.status(400).json({ success: false, message: 'Quantity must be a whole number greater than 0.' });
+                return res.status(400).json({
+                    success: false,
+                    message: 'Quantity must be a whole number greater than 0.'
+                });
             }
 
+            // Retrieve the item to verify it exists and belongs to the user
             const existing = await CartItem.getCartItemById(cartItemId);
+
             if (!existing) {
-                return res.status(404).json({ success: false, message: 'Cart item not found.' });
+                return res.status(404).json({
+                    success: false,
+                    message: 'Cart item not found.'
+                });
             }
+
             if (existing.cart.memberId !== memberId) {
-                return res.status(403).json({ success: false, message: 'You can only manage items in your own cart.' });
+                return res.status(403).json({
+                    success: false,
+                    message: 'You can only manage items in your own cart.'
+                });
             }
 
             await CartItem.updateCartItem(cartItemId, quantity);
 
-            return res.json({ success: true, message: 'Cart item updated successfully' });
+            return res.json({
+                success: true,
+                message: 'Cart item updated successfully'
+            });
         } catch (err) {
-            if (err.code === 'NO_CHANGES') {
-                return res.status(400).json({ success: false, message: err.message });
+            if (err.code === CartItem.ERROR_CODES.NO_CHANGES) {
+                return res.status(400).json({
+                    success: false,
+                    message: err.message
+                });
             }
+
+            if (err.code === CartItem.ERROR_CODES.NOT_FOUND) {
+                return res.status(404).json({
+                    success: false,
+                    message: err.message
+                });
+            }
+
             console.error('Error updating cart item:', err);
-            return res.status(500).json({ success: false, message: 'Unexpected error while updating cart item.' });
+            return res.status(500).json({
+                success: false,
+                message: 'Unexpected error while updating cart item.'
+            });
         }
     }
 
-    // DELETE /cart/:cartItemId - remove an item from the cart
+    // Remove an item from the cart
+    // DELETE /cart/:cartItemId
     static async delete(req, res) {
         try {
             const memberId = req.session.userId;
             const cartItemId = Number(req.params.cartItemId);
 
+            // Check ownership before allowing deletion
             const existing = await CartItem.getCartItemById(cartItemId);
+
             if (!existing) {
-                return res.status(404).json({ success: false, message: 'Cart item not found.' });
+                return res.status(404).json({
+                    success: false,
+                    message: 'Cart item not found.'
+                });
             }
+
             if (existing.cart.memberId !== memberId) {
-                return res.status(403).json({ success: false, message: 'You can only manage items in your own cart.' });
+                return res.status(403).json({
+                    success: false,
+                    message: 'You can only manage items in your own cart.'
+                });
             }
 
             await CartItem.deleteCartItem(cartItemId);
 
-            return res.json({ success: true, message: 'Item deleted successfully!' });
+            return res.json({
+                success: true,
+                message: 'Item deleted successfully!'
+            });
         } catch (err) {
+            if (err.code === CartItem.ERROR_CODES.NOT_FOUND) {
+                return res.status(404).json({
+                    success: false,
+                    message: err.message
+                });
+            }
+
             console.error('Error deleting cart item:', err);
-            return res.status(500).json({ success: false, message: 'Unexpected error while deleting cart item.' });
+            return res.status(500).json({
+                success: false,
+                message: 'Unexpected error while deleting cart item.'
+            });
         }
     }
 
-    // GET /cart/:cartItemId - retrieve a single cart item (used to prefill the edit page)
+    // Retrieve a single cart item for the edit page
+    // GET /cart/:cartItemId
     static async getById(req, res) {
         try {
             const memberId = req.session.userId;
             const cartItemId = Number(req.params.cartItemId);
 
             const item = await CartItem.getCartItemById(cartItemId);
+
             if (!item) {
-                return res.status(404).json({ success: false, message: 'Cart item not found.' });
-            }
-            if (item.cart.memberId !== memberId) {
-                return res.status(403).json({ success: false, message: 'You can only view items in your own cart.' });
+                return res.status(404).json({
+                    success: false,
+                    message: 'Cart item not found.'
+                });
             }
 
-            return res.json({ success: true, cartItem: item });
+            // Prevent users from viewing another user's cart item
+            if (item.cart.memberId !== memberId) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'You can only view items in your own cart.'
+                });
+            }
+
+            return res.json({
+                success: true,
+                cartItem: item
+            });
         } catch (err) {
             console.error('Error retrieving cart item:', err);
-            return res.status(500).json({ success: false, message: 'Unexpected error while retrieving cart item.' });
+            return res.status(500).json({
+                success: false,
+                message: 'Unexpected error while retrieving cart item.'
+            });
         }
     }
 }
