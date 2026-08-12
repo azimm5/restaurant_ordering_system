@@ -104,7 +104,7 @@ module.exports.calculateCheckoutSummary = async function calculateCheckoutSummar
             productName: item.product.name,
             quantity: item.quantity,
             unitPrice: Number(item.unitPrice),
-            lineSubtotal: Number(item.subtotal),
+            lineSubtotal: Number(item.unitPrice) * item.quantity,
             reason: 'Product is currently unavailable'
         }));
 
@@ -168,7 +168,7 @@ module.exports.calculateCheckoutSummary = async function calculateCheckoutSummar
 
     for (const item of items) {
         // Calculate each item's subtotal (unitPrice × quantity)
-        const lineSubtotal = Number(item.subtotal);
+        const lineSubtotal = Number(item.unitPrice) * item.quantity;
         merchandiseSubtotal += lineSubtotal;
 
         const discountRule = getBestProductRule(

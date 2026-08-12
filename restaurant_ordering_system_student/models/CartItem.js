@@ -20,7 +20,6 @@ module.exports.createCartItem = function createCartItem(cartId, productId, quant
             productId: Number(productId),
             quantity: Number(quantity),
             unitPrice: unitPrice,
-            subtotal: Number(quantity) * unitPrice
         }
     }).then(item => item)
         .catch(async error => {
@@ -62,7 +61,6 @@ module.exports.updateCartItem = function updateCartItem(cartItemId, quantity) {
                 where: { cartItemId: cartItemId },
                 data: {
                     quantity: newQuantity,
-                    subtotal: newQuantity * Number(existing.unitPrice)
                 },
                 include: { product: true }
             });
@@ -115,18 +113,18 @@ module.exports.getCartItemById = function getCartItemById(cartItemId) {
 // Get cart summary (total quantity & price)
 // Uses Prisma aggregate() at the database level
 module.exports.getCartSummary = async function getCartSummary(cartId) {
-    const result = await prisma.cartItem.aggregate({
+    const items = await prisma.cartItem.findMany({
         where: { cartId: cartId },
-        _sum: {
-            quantity: true,
-            subtotal: true
-        }
+        select: { quantity: true, unitPrice: true }
     });
 
-    return {
-        totalQuantity: result._sum.quantity ?? 0,
-        totalCheckoutPrice: Number(result._sum.subtotal ?? 0)
-    };
+    const totals = items.reduce((acc, item) => {
+        acc.totalQuantity += item.quantity;
+        acc.totalCheckoutPrice += item.quantity * Number(item.unitPrice);
+        return acc;
+    }, { totalQuantity: 0, totalCheckoutPrice: 0 });
+
+    return totals;
 };
 
 // Look up a product and its real price

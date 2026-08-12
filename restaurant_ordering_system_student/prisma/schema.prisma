@@ -123,7 +123,6 @@ model cartItem {
   productId  Int     @map("product_id")
   quantity   Int
   unitPrice  Decimal @map("unit_price") @db.Decimal(10, 2)
-  subtotal   Decimal @db.Decimal(10, 2)
 
   // Relations
   cart    cart    @relation(fields: [cartId], references: [cartId], onDelete: Cascade, onUpdate: NoAction, map: "cart_item_cart_id_fk")
