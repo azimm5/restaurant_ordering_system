@@ -94,8 +94,8 @@ model saleOrder {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model saleOrderItem {
   orderItemId Int        @id @default(autoincrement()) @map("order_item_id")
-  orderId     Int?       @map("order_id")
-  productId   Int?       @map("product_id")
+  orderId     Int       @map("order_id")
+  productId   Int       @map("product_id")
   quantity    Int
   unitPrice   Decimal    @map("unit_price") @db.Decimal(10, 2)
   subtotal    Decimal    @db.Decimal(10, 2)
