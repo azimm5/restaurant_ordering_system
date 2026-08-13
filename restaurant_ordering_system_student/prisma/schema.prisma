@@ -37,7 +37,7 @@ model member {
   memberRole   memberRole? @relation("MemberRoles")
   response     response[]
   saleOrder    saleOrder[]
-  carts        cart[] // NEW: reverse relation to cart
+  carts        cart? 
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -99,8 +99,8 @@ model saleOrderItem {
   quantity    Int
   unitPrice   Decimal    @map("unit_price") @db.Decimal(10, 2)
   subtotal    Decimal    @db.Decimal(10, 2)
-  saleOrder   saleOrder? @relation(fields: [orderId], references: [orderId], onDelete: Cascade, onUpdate: NoAction)
-  product     product?   @relation(fields: [productId], references: [productId], onDelete: NoAction, onUpdate: NoAction)
+  saleOrder   saleOrder @relation(fields: [orderId], references: [orderId], onDelete: Cascade, onUpdate: NoAction)
+  product     product   @relation(fields: [productId], references: [productId], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("sale_order_item")
 }
