@@ -78,13 +78,13 @@ model response {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model saleOrder {
   orderId         Int             @id @default(autoincrement()) @map("order_id")
-  memberId        Int?            @map("member_id")
+  memberId        Int            @map("member_id")
   orderDate       DateTime?       @default(now()) @map("order_date") @db.Timestamp(6)
   totalAmount     Decimal         @map("total_amount") @db.Decimal(10, 2)
   status          String          @db.VarChar(20)
   deliveryAddress String?         @map("delivery_address")
   feedback        feedback[]
-  member          member?         @relation(fields: [memberId], references: [memberId], onDelete: NoAction, onUpdate: NoAction)
+  member          member         @relation(fields: [memberId], references: [memberId], onDelete: NoAction, onUpdate: NoAction)
   saleOrderItem   saleOrderItem[]
 
   @@unique([memberId, orderDate], map: "sale_order_member_date_unique")
