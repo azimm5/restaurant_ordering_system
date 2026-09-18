@@ -11,7 +11,7 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark restaurant-navbar">
         <div class="container">
             <a class="navbar-brand" href="/">Restaurant System</a>
             <div class="navbar-nav ms-auto">
@@ -180,10 +180,10 @@
           <td>${new Date(order.order_date).toLocaleDateString()}</td>
           <td>$${order.total_amount}</td>
           <td>
-            <span class="badge ${order.status === 'COMPLETED' ? 'bg-success' :
-                                order.status === 'CANCELLED' ? 'bg-danger' :
-                                    order.status === 'PACKING' ? 'bg-warning' :
-                                        'bg-secondary'
+            <span class="badge ${order.status === 'COMPLETED' ? 'badge-status-success' :
+                                order.status === 'CANCELLED' ? 'badge-status-danger' :
+                                    order.status === 'PACKING' ? 'badge-status-warning' :
+                                        'badge-status-neutral'
                             }">
               ${order.status}
             </span>

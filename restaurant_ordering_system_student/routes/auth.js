@@ -7,72 +7,72 @@ const path = require('path');
 
 // Serve login page
 router.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, '../views/login.html'));
+  res.sendFile(path.join(__dirname, '../views/login.html'));
 });
 
 // Serve register page
 router.get('/register', (req, res) => {
-    res.sendFile(path.join(__dirname, '../views/register.html'));
+  res.sendFile(path.join(__dirname, '../views/register.html'));
 });
 
 
 // Handle login
 router.post('/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-        if (!email || !password) {
-            return res.json({ success: false, message: 'Email and password are required' });
-        }
-
-        const query = 'SELECT m.member_id, m.username, m.password_hash, mr.role FROM member m JOIN member_role mr ON m.member_id = mr.member_id WHERE m.email = $1;'
-        const result = await db.query(query, [email]);
-
-        if (result.rows.length === 0) {
-            return res.json({ success: false, message: 'Invalid email or password' });
-        }
-
-        const user = result.rows[0];
-
-        // Check password
-        const isValidPassword = await bcrypt.compare(password, user.password_hash);
-        if (!isValidPassword) {
-            return res.json({ success: false, message: 'Invalid email or password' });
-        }
-
-        // Create session
-        req.session.userId = user.member_id;
-        req.session.userRole = user.role;
-        req.session.userName = user.username;
-        req.session.email = email;
-
-        // Determine redirect URL based on role
-
-        let redirectUrl;
-
-        if (user.role === 'ADMIN'){
-            redirectUrl = '/dashboard';
-        } else if (user.role === 'USER'){
-            redirectUrl = '/member/products';
-        } else {
-            redirectUrl = '/login';
-        }
-        
-        res.json({ 
-            success: true, 
-            message: 'Login successful', 
-            redirectUrl: redirectUrl,
-            user: {
-                id: user.member_id,
-                name: user.username,
-                email: user.email,
-                role: user.role
-            }
-        });
-
-    } catch (error) {
-        res.json({ success: false, message: 'An error occurred during login' });
+    if (!email || !password) {
+      return res.json({ success: false, message: 'Email and password are required' });
     }
+
+    const query = 'SELECT m.member_id, m.username, m.password_hash, mr.role FROM member m JOIN member_role mr ON m.member_id = mr.member_id WHERE m.email = $1;'
+    const result = await db.query(query, [email]);
+
+    if (result.rows.length === 0) {
+      return res.json({ success: false, message: 'Invalid email or password' });
+    }
+
+    const user = result.rows[0];
+
+    // Check password
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (!isValidPassword) {
+      return res.json({ success: false, message: 'Invalid email or password' });
+    }
+
+    // Create session
+    req.session.userId = user.member_id;
+    req.session.userRole = user.role;
+    req.session.userName = user.username;
+    req.session.email = email;
+
+    // Determine redirect URL based on role
+
+    let redirectUrl;
+
+    if (user.role === 'ADMIN') {
+      redirectUrl = '/dashboard';
+    } else if (user.role === 'USER') {
+      redirectUrl = '/member/products';
+    } else {
+      redirectUrl = '/login';
+    }
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      redirectUrl: redirectUrl,
+      user: {
+        id: user.member_id,
+        name: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    res.json({ success: false, message: 'An error occurred during login' });
+  }
 });
 
 // Handle registration
@@ -94,7 +94,23 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // 2. Check if email already exists
+    // 2. Basic format checks
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.json({
+        success: false,
+        message: 'Please enter a valid email address'
+      });
+    }
+
+    if (password.length < 8) {
+      return res.json({
+        success: false,
+        message: 'Password must be at least 8 characters long'
+      });
+    }
+
+    // 3. Check if email already exists
     const checkEmailQuery = `
       SELECT member_id
       FROM member
@@ -105,11 +121,26 @@ router.post('/register', async (req, res) => {
     if (emailCheckResult.rows.length > 0) {
       return res.json({
         success: false,
-        message: 'Email already registered'
+        message: 'That email is already registered. Try logging in instead.'
       });
     }
 
-    // 3. Hash password using bcryptjs
+    // 4. Check if username already exists
+    const checkUsernameQuery = `
+      SELECT member_id
+      FROM member
+      WHERE username = $1
+    `;
+    const usernameCheckResult = await db.query(checkUsernameQuery, [username]);
+
+    if (usernameCheckResult.rows.length > 0) {
+      return res.json({
+        success: false,
+        message: 'That username is already taken. Please choose another.'
+      });
+    }
+
+    // 5. Hash password using bcryptjs
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
@@ -157,21 +188,37 @@ router.post('/register', async (req, res) => {
     });
 
   } catch (error) {
+    // Log the real error server-side so you can debug it
+    console.error('Registration error:', error);
+
+    // Give the user a specific reason instead of a generic message
+    let message = 'An error occurred during registration';
+
+    if (error.code === '23505') {
+      message = 'That email or username is already registered';
+    } else if (error.code === '23502') {
+      message = 'A required field was missing or invalid';
+    } else if (error.code === '23514') {
+      message = 'One of the fields did not meet the required format';
+    } else if (error.code === 'ECONNREFUSED' || error.code === '57P03') {
+      message = 'Could not connect to the database. Please try again shortly';
+    }
+
     res.json({
       success: false,
-      message: 'An error occurred during registration'
+      message
     });
   }
 });
 
 // Handle logout
 router.get('/logout', (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            return res.redirect('/dashboard');
-        }
-        res.redirect('/login');
-    });
+  req.session.destroy((err) => {
+    if (err) {
+      return res.redirect('/dashboard');
+    }
+    res.redirect('/login');
+  });
 });
 
 module.exports = router;

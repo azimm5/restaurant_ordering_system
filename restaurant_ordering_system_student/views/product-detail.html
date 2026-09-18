@@ -16,7 +16,7 @@
 <body>
 
   <!-- Navigation Bar (identical to products.html) -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <nav class="navbar navbar-expand-lg navbar-dark restaurant-navbar">
     <div class="container">
       <a class="navbar-brand" href="#">Restaurant Ordering System</a>
       <div class="navbar-nav ms-auto align-items-center">
@@ -46,7 +46,7 @@
 
     <!-- Loading State -->
     <div id="loading" class="text-center py-5">
-      <div class="spinner-border text-secondary" role="status">
+      <div class="spinner-border spinner-brand" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
     </div>
@@ -105,7 +105,7 @@
 
       <!-- Feedback Loading -->
       <div id="feedback-loading" class="text-center py-3" style="display: none;">
-        <div class="spinner-border text-secondary" role="status">
+        <div class="spinner-border spinner-brand" role="status">
           <span class="visually-hidden">Loading feedback...</span>
         </div>
       </div>
@@ -121,7 +121,7 @@
 
   <!-- Toast Container -->
   <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
-    <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert"
+    <div id="successToast" class="toast align-items-center text-white toast-success border-0" role="alert"
       aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
         <div class="toast-body" id="toastMessage">
@@ -210,7 +210,7 @@
         // Render availability badge
         const statusCell = document.getElementById('detail-status');
         statusCell.innerHTML = `
-          <span class="badge ${product.is_available ? 'bg-success' : 'bg-secondary'}">
+          <span class="badge ${product.is_available ? 'badge-available' : 'badge-unavailable'}">
             ${product.is_available ? 'Available' : 'Unavailable'}
           </span>
         `;
@@ -271,7 +271,7 @@
         <!-- Responses section -->
       <div id="responses-${fb.feedback_id}" class="mt-2">
                 <div id="responses-loading-${fb.feedback_id}" class="text-center py-2" style="display:none;">
-                  <div class="spinner-border text-secondary" role="status">
+                  <div class="spinner-border spinner-brand" role="status">
                     <span class="visually-hidden">Loading responses...</span>
                   </div>
                 </div>

@@ -12,7 +12,7 @@
 <body>
 
   <!-- Navigation Bar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <nav class="navbar navbar-expand-lg navbar-dark restaurant-navbar">
     <div class="container">
       <a class="navbar-brand" href="#">Restaurant Ordering System</a>
       <div class="navbar-nav ms-auto align-items-center">
@@ -23,49 +23,48 @@
   </nav>
 
   <!-- Main Content -->
-  <main class="container mt-4">
-    <div class="card">
-      <div class="card-body">
-        <h4 class="card-title d-flex justify-content-between align-items-center">
-          <span>Available Products</span>
-          <!-- New Feedback Button -->
-          <div class="d-flex gap-2">
-            <a id="my-cart-link" href="#" class="btn btn-outline-primary btn-sm">
-              My Cart 🛒
-            </a>
-            <a href="/member/feedback" class="btn btn-secondary btn-sm">
-              My Feedback
-            </a>
-          </div>
-        </h4>
-
-        <div class="table-responsive">
-          <table class="table table-striped align-middle">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Category</th>
-                <th>Price ($)</th>
-                <th>Status</th>
-                <th>Created At</th>
-                <th>Details</th>
-              </tr>
-            </thead>
-            <tbody id="product-table-body"></tbody>
-          </table>
-        </div>
-
-        <div id="no-products" class="alert alert-info mt-3" style="display: none;">
-          No products available.
-        </div>
+  <main class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="mb-0">Our Menu</h2>
+        <p class="text-muted mb-0">Fresh picks, made to order.</p>
       </div>
+      <div class="d-flex gap-2">
+        <a id="my-cart-link" href="#" class="btn btn-outline-primary btn-sm">
+          My Cart 🛒
+        </a>
+        <a href="/member/feedback" class="btn btn-secondary btn-sm">
+          My Feedback
+        </a>
+      </div>
+    </div>
+
+    <div id="product-grid" class="menu-grid"></div>
+
+    <div id="no-products" class="alert alert-info mt-3" style="display: none;">
+      No products available.
     </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
+    // Emoji shown on each menu card, picked from the product's category.
+    const CATEGORY_ICONS = {
+      appetizer: '🥗', appetizers: '🥗', starter: '🥗',
+      main: '🍽️', mains: '🍽️', entree: '🍽️', 'main course': '🍽️',
+      dessert: '🍰', desserts: '🍰', sweets: '🍰',
+      drink: '🥤', drinks: '🥤', beverage: '🥤', beverages: '🥤',
+      pizza: '🍕', pasta: '🍝', burger: '🍔', burgers: '🍔',
+      seafood: '🦞', soup: '🍲', soups: '🍲', salad: '🥗', salads: '🥗',
+      breakfast: '🍳', sides: '🍟', side: '🍟'
+    };
+
+    function iconFor(category) {
+      if (!category) return '🍴';
+      return CATEGORY_ICONS[category.toLowerCase().trim()] || '🍴';
+    }
+
     document.addEventListener('DOMContentLoaded', fetchProducts);
 
     async function fetchProducts() {
@@ -73,10 +72,10 @@
         const response = await fetch('/products');
         const data = await response.json();
 
-        const tbody = document.getElementById('product-table-body');
+        const grid = document.getElementById('product-grid');
         const noProducts = document.getElementById('no-products');
 
-        tbody.innerHTML = '';
+        grid.innerHTML = '';
 
         if (!data.success || data.products.length === 0) {
           noProducts.style.display = 'block';
@@ -84,37 +83,38 @@
         }
 
         data.products.forEach(product => {
-          const row = document.createElement('tr');
+          const card = document.createElement('div');
+          card.className = 'menu-card';
 
-          row.innerHTML = `
-            <td>${product.name}</td>
-            <td>${product.description || '-'}</td>
-            <td>${product.category || '-'}</td>
-            <td>${parseFloat(product.price).toFixed(2)}</td>
-            <td>
-              <span class="badge ${product.is_available ? 'bg-success' : 'bg-secondary'}">
-                ${product.is_available ? 'Available' : 'Unavailable'}
-              </span>
-            </td>
-            <td>${new Date(product.created_at).toLocaleDateString()}</td>
-            <td>
-              <a href="/member/product-detail?id=${product.product_id}" class="btn btn-primary btn-sm">
-                View Details
-              </a>
-              ${product.is_available
-              ? `<a href="/member/cart/create?ref=products&productId=${product.product_id}" 
-             class="btn btn-success btn-sm ms-2">
-             Add to Cart
-           </a>`
-              : `<a href="#" class="btn btn-secondary btn-sm ms-2 disabled" 
-             aria-disabled="true">
-             Unavailable
-           </a>`
-            }
-            </td>
+          const cartOrUnavailableBtn = product.is_available
+            ? `<a href="/member/cart/create?ref=products&productId=${product.product_id}"
+                 class="btn btn-success btn-sm">Add to Cart</a>`
+            : `<a href="#" class="btn btn-secondary btn-sm disabled" aria-disabled="true">Unavailable</a>`;
+
+          card.innerHTML = `
+            <div class="menu-card__media">${iconFor(product.category)}</div>
+            <div class="menu-card__body">
+              <div class="menu-card__category">${product.category || 'Menu Item'}</div>
+              <div class="menu-card__name">${product.name}</div>
+              <div class="menu-card__desc">${product.description || 'No description available.'}</div>
+              <div class="mb-2">
+                <span class="badge ${product.is_available ? 'badge-available' : 'badge-unavailable'}">
+                  ${product.is_available ? 'Available' : 'Unavailable'}
+                </span>
+              </div>
+              <div class="menu-card__footer">
+                <span class="price-tag">$${parseFloat(product.price).toFixed(2)}</span>
+                <div class="d-flex gap-2">
+                  <a href="/member/product-detail?id=${product.product_id}" class="btn btn-outline-primary btn-sm">
+                    Details
+                  </a>
+                  ${cartOrUnavailableBtn}
+                </div>
+              </div>
+            </div>
           `;
 
-          tbody.appendChild(row);
+          grid.appendChild(card);
         });
 
         // Set the "My Cart" link dynamically here after getting product id

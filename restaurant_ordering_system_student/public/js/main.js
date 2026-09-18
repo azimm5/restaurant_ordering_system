@@ -12,7 +12,7 @@ function formatDate(dateString) {
 function createStarRating(rating) {
   let stars = '';
   for (let i = 1; i <= 5; i++) {
-    stars += `<span class="${i <= rating ? 'text-warning' : 'text-muted'}">★</span>`;
+    stars += `<span class="${i <= rating ? 'star-filled' : 'text-muted'}">★</span>`;
   }
   return stars + `<small class="text-muted">(${rating}/5)</small>`;
 }

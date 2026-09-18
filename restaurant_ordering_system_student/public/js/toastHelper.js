@@ -10,7 +10,7 @@ function showToast(message, redirectUrl = null, reloadFn = null, style = 'succes
   if (style === 'warning') {
     toastElement.classList.add('text-dark', 'bg-warning');
   } else {
-    toastElement.classList.add('text-white', 'bg-success');
+    toastElement.classList.add('text-white', 'toast-success');
   }
 
   // Inject message

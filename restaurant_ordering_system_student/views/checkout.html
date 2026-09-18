@@ -12,7 +12,7 @@
 
 <body>
 
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <nav class="navbar navbar-expand-lg navbar-dark restaurant-navbar">
     <div class="container">
       <a class="navbar-brand" href="#">Restaurant Ordering System</a>
       <div class="navbar-nav ms-auto align-items-center">
@@ -31,7 +31,7 @@
     </div>
 
     <div id="loading" class="text-center py-5">
-      <div class="spinner-border text-secondary" role="status">
+      <div class="spinner-border spinner-brand" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
     </div>
@@ -189,7 +189,7 @@
               <td>${item.quantity}</td>
               <td>${item.unitPrice.toFixed(2)}</td>
               <td>${item.lineSubtotal.toFixed(2)}</td>
-              <td><span class="badge bg-danger">${item.reason}</span></td>
+              <td><span class="badge badge-danger">${item.reason}</span></td>
             `;
             unavailableTbody.appendChild(row);
           });

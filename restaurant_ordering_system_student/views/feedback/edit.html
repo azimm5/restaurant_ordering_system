@@ -15,7 +15,7 @@
 
 <body>
     <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark restaurant-navbar">
         <div class="container">
             <a class="navbar-brand" href="#">Restaurant Ordering System</a>
             <div class="navbar-nav ms-auto align-items-center">
@@ -37,7 +37,7 @@
 
         <!-- Loading State -->
         <div id="loading" class="text-center py-5">
-            <div class="spinner-border text-secondary" role="status">
+            <div class="spinner-border spinner-brand" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
         </div>
@@ -64,7 +64,7 @@
 
     <!-- Toast Container -->
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
-        <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert"
+        <div id="successToast" class="toast align-items-center text-white toast-success border-0" role="alert"
             aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body" id="toastMessage">
