@@ -2,13 +2,9 @@ const express = require('express');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const bodyParser = require('body-parser');
-const path = require('path');
 require('dotenv').config();
 
 const pool = require('./config/database');
-const authRoutes = require('./routes/auth');
-const feedbackRoutes = require('./routes/feedback');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
