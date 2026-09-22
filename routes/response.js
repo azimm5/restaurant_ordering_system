@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const ResponseController = require('../controllers/ResponseController');
+const ResponseController = require('../controllers/responseController');
 const { ensureAuthenticated, ensureCustomer } = require('../middleware/auth');
 
 // Create a new response (customer only)
