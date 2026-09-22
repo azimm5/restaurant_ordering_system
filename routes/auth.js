@@ -5,6 +5,11 @@ const db = require('../config/database');
 const router = express.Router();
 const path = require('path');
 
+// Redirect root to login
+router.get('/', (req, res) => {
+  res.redirect('/login');
+});
+
 // Serve login page
 router.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, '../views/login.html'));
