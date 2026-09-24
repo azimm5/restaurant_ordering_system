@@ -76,6 +76,7 @@ router.post('/login', async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Login error:', error);
     res.json({ success: false, message: 'An error occurred during login' });
   }
 });
