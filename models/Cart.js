@@ -1,11 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const { PrismaPg } = require('@prisma/adapter-pg');
-
-const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
-const prisma = new PrismaClient({ adapter });
+const prisma = require('../config/prisma');
 
 // Get the member's cart, creating one if it doesn't exist yet
 // Used by: views/cart/create.html, views/cart/retrieve.html 
